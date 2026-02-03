@@ -1,0 +1,8 @@
+---
+Name: restruct-mfa-bundle-routes
+After:
+  - '#rootroutes'
+---
+SilverStripe\Control\Director:
+  rules:
+    'mfa-help': 'Restruct\MFABundle\Controllers\MFAHelpController'

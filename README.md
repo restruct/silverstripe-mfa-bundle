@@ -185,6 +185,93 @@ The default SilverStripe setting only allows USB security keys. This bundle chan
 
 Use `BYPASS_MFA=1` in `.env` to skip MFA during development.
 
+**Note:** WebAuthn passkeys require a trusted HTTPS certificate. Self-signed certificates may cause registration to fail with Chrome's native passkey storage.
+
+## Understanding WebAuthn Authenticator Types
+
+WebAuthn supports different authenticator types with different trade-offs:
+
+### Platform vs Cross-Platform
+
+| Type | Examples | Pros | Cons |
+|------|----------|------|------|
+| **Platform** | Touch ID, Face ID, Windows Hello | Free, built-in, convenient | Tied to single device |
+| **Cross-platform** | YubiKey, USB/NFC security keys | Portable, works anywhere | Requires purchasing hardware |
+
+### Passkeys (Synced Credentials)
+
+Modern browsers support **passkeys** - WebAuthn credentials that sync across devices:
+
+- **iCloud Keychain**: Syncs across Apple devices (Mac, iPhone, iPad)
+- **Google Password Manager**: Syncs across Chrome browsers logged into same Google account
+- **Password managers**: 1Password, Bitwarden, Proton Pass can store passkeys
+
+When a user registers WebAuthn with `authenticator_attachment: ~` (both), the browser offers choices:
+1. **This device** (platform) - Touch ID/Face ID, may sync via iCloud/Google
+2. **Security key** (cross-platform) - USB/NFC hardware key
+3. **Phone/tablet** - Use another device via QR code
+
+Users can register multiple authenticators for redundancy.
+
+### Recommendation
+
+This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum flexibility. Users can choose based on their needs:
+- Office workers with one machine → Touch ID
+- Mobile workers → Synced passkey or hardware key
+- High-security environments → Hardware keys only (`'cross-platform'`)
+
+## Help Pages
+
+This bundle includes Dutch help pages served locally at `/mfa-help/`:
+
+| URL | Content |
+|-----|---------|
+| `/mfa-help/` | Overview of MFA |
+| `/mfa-help/totp` | Authenticator app setup |
+| `/mfa-help/webauthn` | Security key / biometrics setup |
+| `/mfa-help/backup-codes` | Backup codes explanation |
+
+### Customizing Help Content
+
+Override the content via config:
+
+```yaml
+Restruct\MFABundle\Controllers\MFAHelpController:
+  help_content:
+    totp:
+      title: 'Custom Title'
+      content: '<p>Your custom HTML content...</p>'
+```
+
+Or point to your own URLs:
+
+```yaml
+SilverStripe\TOTP\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/totp'
+
+SilverStripe\WebAuthn\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/security-keys'
+
+SilverStripe\MFA\Authenticator\LoginHandler:
+  user_help_link: 'https://your-site.com/help/mfa'
+
+SilverStripe\MFA\BackupCode\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/backup-codes'
+```
+
+To disable help links entirely, set them to empty strings.
+
+## Further Reading
+
+### SilverStripe Documentation
+- [MFA Module](https://github.com/silverstripe/silverstripe-mfa) - Core MFA framework
+- [TOTP Authenticator](https://github.com/silverstripe/silverstripe-totp-authenticator/blob/6/docs/en/index.md) - Authenticator app configuration
+- [WebAuthn Authenticator](https://github.com/silverstripe/silverstripe-webauthn-authenticator/blob/master/docs/en/readme.md) - Security keys configuration
+
+### WebAuthn Specifications
+- [WebAuthn Guide](https://webauthn.guide/) - Introduction to WebAuthn
+- [Authenticator Selection Criteria](https://github.com/web-auth/webauthn-framework/blob/1.2.x/doc/webauthn/PublicKeyCredentialCreation.md#authenticator-selection-criteria) - Technical details on authenticator filtering
+
 ## License
 
 MIT
