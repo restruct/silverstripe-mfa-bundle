@@ -2,6 +2,7 @@
 Name: restruct-mfa-bundle
 After:
   - 'totpauthenticatorconfig'
+  - 'MFAWebAuthnAuthenticator'
 ---
 # Require at least one MFA method to be registered
 SilverStripe\MFA\Service\EnforcementManager:
@@ -11,3 +12,20 @@ SilverStripe\MFA\Service\EnforcementManager:
 SilverStripe\TOTP\RegisterHandler:
   extensions:
     - Restruct\MFABundle\Extensions\TOTPConfigExtension
+
+# WebAuthn: Allow both platform authenticators (Touch ID, Windows Hello)
+# and cross-platform authenticators (USB security keys)
+# Default is 'cross-platform' only, which excludes biometrics
+# Options: null (both), 'platform' (biometrics only), 'cross-platform' (keys only)
+SilverStripe\WebAuthn\RegisterHandler:
+  authenticator_attachment: ~
+
+# Add admin interface for managing user MFA methods
+SilverStripe\Security\Member:
+  extensions:
+    - Restruct\MFABundle\Extensions\MemberMFAAdminExtension
+
+# Add summary fields for RegisteredMethod GridField display
+SilverStripe\MFA\Model\RegisteredMethod:
+  extensions:
+    - Restruct\MFABundle\Extensions\RegisteredMethodExtension
