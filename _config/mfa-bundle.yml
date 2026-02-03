@@ -1,0 +1,13 @@
+---
+Name: restruct-mfa-bundle
+After:
+  - 'totpauthenticatorconfig'
+---
+# Require at least one MFA method to be registered
+SilverStripe\MFA\Service\EnforcementManager:
+  required_mfa_methods: 1
+
+# Register TOTP config extension for customizable issuer, period, etc.
+SilverStripe\TOTP\RegisterHandler:
+  extensions:
+    - Restruct\MFABundle\Extensions\TOTPConfigExtension
