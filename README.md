@@ -12,6 +12,7 @@ Portable MFA bundle for Silverstripe 5 with TOTP (Google Authenticator) and WebA
 
 - Silverstripe ^5.0
 - PHP ^8.1
+- `ext-bcmath` PHP extension (required by WebAuthn)
 
 ## Installation
 
