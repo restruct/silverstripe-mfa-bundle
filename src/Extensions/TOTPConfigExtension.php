@@ -10,12 +10,6 @@ use SilverStripe\Security\Member;
 /**
  * Configurable TOTP settings for authenticator apps.
  *
- * Configure via YAML:
- *
- * Restruct\MFABundle\Extensions\TOTPConfigExtension:
- *   issuer: 'My App Name'
- *   period: 30
- *
  * @extends Extension<\SilverStripe\TOTP\RegisterHandler>
  */
 class TOTPConfigExtension extends Extension
@@ -32,11 +26,6 @@ class TOTPConfigExtension extends Extension
      * Time period in seconds for TOTP code validity (default: 30)
      */
     private static int $period = 30;
-
-    /**
-     * Number of digits in the TOTP code (default: 6)
-     */
-    private static int $digits = 6;
 
     /**
      * Hash algorithm: sha1, sha256, or sha512 (default: sha1)
@@ -57,11 +46,6 @@ class TOTPConfigExtension extends Extension
         $period = $this->config()->get('period');
         if ($period && $period !== 30) {
             $totp->setPeriod($period);
-        }
-
-        $digits = $this->config()->get('digits');
-        if ($digits && $digits !== 6) {
-            $totp->setDigits($digits);
         }
 
         $algorithm = $this->config()->get('algorithm');

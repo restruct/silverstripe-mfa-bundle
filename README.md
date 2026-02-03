@@ -5,7 +5,7 @@ Portable MFA bundle for Silverstripe 5 with TOTP (Google Authenticator) and WebA
 ## Features
 
 - Bundles `silverstripe/mfa`, `silverstripe/totp-authenticator`, and `silverstripe/webauthn-authenticator`
-- Configurable TOTP settings (issuer name, period, digits, algorithm)
+- Configurable TOTP settings (issuer name, period, algorithm)
 - Sensible defaults: requires at least 1 MFA method
 
 ## Requirements
@@ -40,19 +40,19 @@ php -r "echo bin2hex(random_bytes(32));"
 Create `app/_config/mfa.yml`:
 
 ```yaml
+# Settings via this bundle's extension
 Restruct\MFABundle\Extensions\TOTPConfigExtension:
-  # Name shown in authenticator apps (defaults to SiteConfig Title)
-  issuer: 'My Company CMS'
+  issuer: 'My Company CMS'      # Name shown in authenticator apps
+  period: 30                     # Seconds per code (default: 30)
+  algorithm: 'sha1'              # sha1, sha256, sha512 (default: sha1)
 
-  # Time period in seconds (default: 30)
-  period: 30
+# Settings on SilverStripe's TOTP classes (set directly)
+SilverStripe\TOTP\Method:
+  code_length: 6                 # Number of digits (default: 6)
 
-  # Number of digits (default: 6)
-  digits: 6
-
-  # Algorithm: sha1, sha256, sha512 (default: sha1)
-  # Note: Not all apps support sha256/sha512
-  algorithm: 'sha1'
+SilverStripe\TOTP\RegisterHandler:
+  secret_length: 16              # Length of generated secret (default: 16)
+  user_help_link: 'https://example.com/mfa-help'  # Help link during setup
 ```
 
 ### 3. Enable MFA requirement (optional)
@@ -76,13 +76,27 @@ BYPASS_MFA=1
 
 ## Configuration Reference
 
+### Bundle extension settings
+
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `issuer` | SiteConfig Title | App name shown in authenticator |
 | `period` | 30 | Seconds per code |
-| `digits` | 6 | Code length (6-8) |
 | `algorithm` | sha1 | Hash algorithm (sha1/sha256/sha512) |
-| `required_mfa_methods` | 1 | Minimum MFA methods required |
+
+### SilverStripe TOTP settings (set directly on SS classes)
+
+| Setting | Class | Default | Description |
+|---------|-------|---------|-------------|
+| `code_length` | `Method` | 6 | Number of digits (6-8) |
+| `secret_length` | `RegisterHandler` | 16 | Secret key length |
+| `user_help_link` | `RegisterHandler` | SS docs | Help link during setup |
+
+### MFA enforcement
+
+| Setting | Class | Default | Description |
+|---------|-------|---------|-------------|
+| `required_mfa_methods` | `EnforcementManager` | 1 | Minimum methods required |
 
 ## How it works
 
