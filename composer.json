@@ -28,5 +28,10 @@
         "psr-4": {
             "Restruct\\MFABundle\\": "src/"
         }
+    },
+    "extra": {
+        "expose": [
+            "client/dist"
+        ]
     }
 }

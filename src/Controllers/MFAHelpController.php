@@ -7,7 +7,9 @@ namespace Restruct\MFABundle\Controllers;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
- use SilverStripe\View\Requirements;
+use SilverStripe\i18n\i18n;
+use SilverStripe\Security\Security;
+use SilverStripe\View\Requirements;
 
 /**
  * Simple controller to serve MFA help pages.
@@ -37,59 +39,19 @@ class MFAHelpController extends Controller
     {
         parent::init();
 
+        // Use logged-in user's locale, fall back to site default
+        $member = Security::getCurrentUser();
+        if ($member && $member->Locale) {
+            i18n::set_locale($member->Locale);
+        } else {
+            i18n::set_locale(i18n::config()->get('default_locale'));
+        }
+
         // Prevent indexing of help pages
         $this->getResponse()->addHeader('X-Robots-Tag', 'noindex, nofollow');
 
-        // Include CMS admin styles
-        Requirements::css('silverstripe/admin: client/dist/styles/bundle.css');
-
-        // Additional styling for help pages
-        Requirements::customCSS(<<<'CSS'
-body {
-    background: #f8f9fa;
-}
-.mfa-help {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.mfa-help h1 { margin-bottom: 1.5rem; }
-.mfa-help h2 { margin-top: 1.5rem; font-size: 1.3rem; }
-.mfa-help ul, .mfa-help ol { margin: 1rem 0; padding-left: 1.5rem; }
-.mfa-help li { margin: 0.5rem 0; }
-.mfa-help p { margin: 1rem 0; }
-.mfa-help-nav {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #dee2e6;
-    flex-wrap: wrap;
-}
-.mfa-help-nav a,
-.mfa-help-nav strong {
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.9rem;
-}
-.mfa-help-nav a {
-    background: #e9ecef;
-    color: #495057;
-}
-.mfa-help-nav a:hover {
-    background: #dee2e6;
-    color: #212529;
-}
-.mfa-help-nav strong {
-    background: #0d6efd;
-    color: #fff;
-}
-CSS
-        );
+        // Help page styling
+        Requirements::css('restruct/silverstripe-mfa-bundle: client/dist/css/mfa-help.css');
     }
 
     public function index(HTTPRequest $request): HTTPResponse|array
