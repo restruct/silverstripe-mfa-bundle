@@ -40,24 +40,54 @@ class MFAHelpController extends Controller
         // Prevent indexing of help pages
         $this->getResponse()->addHeader('X-Robots-Tag', 'noindex, nofollow');
 
-        // Basic styling
+        // Include CMS admin styles
+        Requirements::css('silverstripe/admin: client/dist/styles/bundle.css');
+
+        // Additional styling for help pages
         Requirements::customCSS(<<<'CSS'
+body {
+    background: #f8f9fa;
+}
 .mfa-help {
     max-width: 800px;
     margin: 2rem auto;
     padding: 2rem;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.6;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.mfa-help h1 { margin-bottom: 1.5rem; color: #333; }
-.mfa-help h2 { margin-top: 1.5rem; color: #444; font-size: 1.3rem; }
-.mfa-help h3 { margin-top: 1.5rem; color: #444; font-size: 1.1rem; }
+.mfa-help h1 { margin-bottom: 1.5rem; }
+.mfa-help h2 { margin-top: 1.5rem; font-size: 1.3rem; }
 .mfa-help ul, .mfa-help ol { margin: 1rem 0; padding-left: 1.5rem; }
 .mfa-help li { margin: 0.5rem 0; }
 .mfa-help p { margin: 1rem 0; }
-.mfa-help a { color: #0066cc; }
-.mfa-help-nav { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }
-.mfa-help-nav a { margin-right: 1rem; }
+.mfa-help-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    flex-wrap: wrap;
+}
+.mfa-help-nav a,
+.mfa-help-nav strong {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.mfa-help-nav a {
+    background: #e9ecef;
+    color: #495057;
+}
+.mfa-help-nav a:hover {
+    background: #dee2e6;
+    color: #212529;
+}
+.mfa-help-nav strong {
+    background: #0d6efd;
+    color: #fff;
+}
 CSS
         );
     }
@@ -270,7 +300,7 @@ MD,
             }
         }
 
-        return implode(' | ', $links);
+        return implode("\n", $links);
     }
 
     public function Link($action = null): string
