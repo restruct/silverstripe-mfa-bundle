@@ -1,0 +1,95 @@
+de:
+  Restruct\MFABundle\Controllers\MFAHelpController:
+    NAV_OVERVIEW: 'Übersicht'
+    NAV_TOTP: 'Authenticator-App'
+    NAV_WEBAUTHN: 'Sicherheitsschlüssel'
+    NAV_BACKUPCODES: 'Backup-Codes'
+    INDEX: |
+      # Zwei-Faktor-Authentifizierung (MFA)
+
+      Die Zwei-Faktor-Authentifizierung (MFA) fügt Ihrem Konto eine zusätzliche Sicherheitsebene hinzu. Neben Ihrem Passwort benötigen Sie einen zweiten Faktor zum Anmelden.
+
+      ## Verfügbare Methoden
+
+      - **Authenticator-App** - Verwenden Sie eine App wie Google Authenticator oder 1Password
+      - **Sicherheitsschlüssel** - Verwenden Sie Touch ID, Face ID oder einen USB-Schlüssel
+
+      ## Backup-Codes
+
+      Bei der Einrichtung von MFA erhalten Sie Backup-Codes. Bewahren Sie diese sicher auf - Sie können sie verwenden, wenn Sie keinen Zugang zu Ihrer normalen Verifizierungsmethode haben.
+    TOTP: |
+      # Authenticator-App einrichten
+
+      ## Was benötigen Sie?
+
+      Eine Authenticator-App auf Ihrem Telefon, zum Beispiel:
+
+      - Google Authenticator (kostenlos)
+      - Microsoft Authenticator (kostenlos)
+      - 1Password, Bitwarden oder Authy
+
+      ## Einrichtung
+
+      1. Öffnen Sie die Authenticator-App auf Ihrem Telefon
+      2. Wählen Sie "Konto hinzufügen" oder das + Symbol
+      3. Scannen Sie den QR-Code, der auf dem Bildschirm erscheint
+      4. Geben Sie den 6-stelligen Code ein, den die App anzeigt
+
+      ## Anmelden
+
+      Beim Anmelden öffnen Sie die App und geben den aktuellen 6-stelligen Code ein. Der Code ändert sich alle 30 Sekunden.
+
+      ## Probleme?
+
+      - **Code funktioniert nicht?** Überprüfen Sie, ob die Zeit auf Ihrem Telefon richtig eingestellt ist
+      - **Telefon verloren?** Verwenden Sie Ihre Backup-Codes oder kontaktieren Sie den Administrator
+    WEBAUTHN: |
+      # Sicherheitsschlüssel einrichten
+
+      ## Was ist ein Sicherheitsschlüssel?
+
+      Ein Sicherheitsschlüssel ist eine sichere Möglichkeit, sich anzumelden mit:
+
+      - **Touch ID / Face ID** - Eingebaut in Ihren Mac, iPhone oder iPad
+      - **Windows Hello** - Fingerabdruck oder Gesichtserkennung unter Windows
+      - **USB-Schlüssel** - Ein physischer Schlüssel wie YubiKey
+
+      ## Einrichtung
+
+      1. Klicken Sie auf "Sicherheitsschlüssel hinzufügen"
+      2. Ihr Browser fragt, welchen Schlüsseltyp Sie verwenden möchten
+      3. Wählen Sie "Dieses Gerät" für Touch ID/Face ID, oder schließen Sie Ihren USB-Schlüssel an
+      4. Bestätigen Sie mit Ihrem Fingerabdruck, Gesicht oder durch Berühren des Schlüssels
+
+      ## Passkeys (Synchronisierte Schlüssel)
+
+      Moderne Browser können Ihren Schlüssel über iCloud oder Google synchronisieren:
+
+      - **iCloud-Schlüsselbund** - Funktioniert auf allen Ihren Apple-Geräten
+      - **Google Passwort-Manager** - Funktioniert in Chrome auf allen Geräten
+
+      So können Sie denselben Schlüssel auf mehreren Geräten verwenden.
+
+      ## Mehrere Geräte
+
+      Sie können mehrere Sicherheitsschlüssel registrieren. Nützlich, wenn Sie sich von verschiedenen Geräten anmelden oder ein Backup wünschen.
+    BACKUPCODES: |
+      # Backup-Codes
+
+      ## Was sind Backup-Codes?
+
+      Backup-Codes sind Einmal-Codes, die Sie verwenden können, wenn Sie keinen Zugang zu Ihrer normalen Verifizierungsmethode haben (Telefon verloren, kaputt, etc.).
+
+      ## Wichtig
+
+      - Jeder Code funktioniert nur einmal
+      - Bewahren Sie sie an einem sicheren Ort auf (nicht auf Ihrem Telefon!)
+      - Drucken Sie sie aus oder speichern Sie sie in einem Passwort-Manager
+
+      ## Codes verloren?
+
+      Wenn Sie alle Ihre Backup-Codes verwendet haben oder sie verloren sind, können Sie in Ihren Profileinstellungen neue erstellen. Die alten Codes werden dann ungültig.
+
+      ## Komplett ausgesperrt?
+
+      Kontaktieren Sie den Administrator. Er kann Ihre MFA-Einstellungen zurücksetzen, damit Sie sie neu einrichten können.

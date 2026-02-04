@@ -1,0 +1,95 @@
+en:
+  Restruct\MFABundle\Controllers\MFAHelpController:
+    NAV_OVERVIEW: 'Overview'
+    NAV_TOTP: 'Authenticator App'
+    NAV_WEBAUTHN: 'Security Key'
+    NAV_BACKUPCODES: 'Backup Codes'
+    INDEX: |
+      # Two-Factor Authentication (MFA)
+
+      Two-factor authentication (MFA) adds an extra layer of security to your account. In addition to your password, you need a second factor to log in.
+
+      ## Available Methods
+
+      - **Authenticator app** - Use an app like Google Authenticator or 1Password
+      - **Security key** - Use Touch ID, Face ID, or a USB key
+
+      ## Backup Codes
+
+      When setting up MFA, you receive backup codes. Store these safely - you can use them if you don't have access to your normal verification method.
+    TOTP: |
+      # Setting Up Authenticator App
+
+      ## What Do You Need?
+
+      An authenticator app on your phone, for example:
+
+      - Google Authenticator (free)
+      - Microsoft Authenticator (free)
+      - 1Password, Bitwarden, or Authy
+
+      ## Setup
+
+      1. Open the authenticator app on your phone
+      2. Choose "Add account" or the + icon
+      3. Scan the QR code that appears on screen
+      4. Enter the 6-digit code shown in the app
+
+      ## Logging In
+
+      When logging in, open the app and enter the current 6-digit code. The code changes every 30 seconds.
+
+      ## Problems?
+
+      - **Code not working?** Check if your phone's time is set correctly
+      - **Lost phone?** Use your backup codes or contact the administrator
+    WEBAUTHN: |
+      # Setting Up Security Key
+
+      ## What Is a Security Key?
+
+      A security key is a secure way to log in using:
+
+      - **Touch ID / Face ID** - Built into your Mac, iPhone or iPad
+      - **Windows Hello** - Fingerprint or facial recognition on Windows
+      - **USB key** - A physical key like YubiKey
+
+      ## Setup
+
+      1. Click "Add security key"
+      2. Your browser asks which type of key you want to use
+      3. Choose "This device" for Touch ID/Face ID, or connect your USB key
+      4. Confirm with your fingerprint, face, or by touching the key
+
+      ## Passkeys (Synced Keys)
+
+      Modern browsers can sync your key via iCloud or Google:
+
+      - **iCloud Keychain** - Works on all your Apple devices
+      - **Google Password Manager** - Works in Chrome on all devices
+
+      This way you can use the same key on multiple devices.
+
+      ## Multiple Devices
+
+      You can register multiple security keys. Useful if you log in from different devices or want a backup.
+    BACKUPCODES: |
+      # Backup Codes
+
+      ## What Are Backup Codes?
+
+      Backup codes are one-time codes you can use if you don't have access to your normal verification method (phone lost, broken, etc.).
+
+      ## Important
+
+      - Each code only works once
+      - Store them in a safe place (not on your phone!)
+      - Print them or save them in a password manager
+
+      ## Lost Codes?
+
+      If you've used all your backup codes or lost them, you can create new ones in your profile settings. The old codes will then become invalid.
+
+      ## Completely Locked Out?
+
+      Contact the administrator. They can reset your MFA settings so you can set up again.

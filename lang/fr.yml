@@ -1,0 +1,95 @@
+fr:
+  Restruct\MFABundle\Controllers\MFAHelpController:
+    NAV_OVERVIEW: 'Aperçu'
+    NAV_TOTP: 'Application Authenticator'
+    NAV_WEBAUTHN: 'Clé de sécurité'
+    NAV_BACKUPCODES: 'Codes de secours'
+    INDEX: |
+      # Authentification à deux facteurs (MFA)
+
+      L'authentification à deux facteurs (MFA) ajoute une couche de sécurité supplémentaire à votre compte. En plus de votre mot de passe, vous avez besoin d'un second facteur pour vous connecter.
+
+      ## Méthodes disponibles
+
+      - **Application authenticator** - Utilisez une application comme Google Authenticator ou 1Password
+      - **Clé de sécurité** - Utilisez Touch ID, Face ID ou une clé USB
+
+      ## Codes de secours
+
+      Lors de la configuration de MFA, vous recevez des codes de secours. Conservez-les en lieu sûr - vous pouvez les utiliser si vous n'avez pas accès à votre méthode de vérification habituelle.
+    TOTP: |
+      # Configurer l'application Authenticator
+
+      ## De quoi avez-vous besoin ?
+
+      Une application authenticator sur votre téléphone, par exemple :
+
+      - Google Authenticator (gratuit)
+      - Microsoft Authenticator (gratuit)
+      - 1Password, Bitwarden ou Authy
+
+      ## Configuration
+
+      1. Ouvrez l'application authenticator sur votre téléphone
+      2. Choisissez "Ajouter un compte" ou l'icône +
+      3. Scannez le code QR qui apparaît à l'écran
+      4. Entrez le code à 6 chiffres affiché dans l'application
+
+      ## Connexion
+
+      Lors de la connexion, ouvrez l'application et entrez le code à 6 chiffres actuel. Le code change toutes les 30 secondes.
+
+      ## Problèmes ?
+
+      - **Le code ne fonctionne pas ?** Vérifiez si l'heure de votre téléphone est correctement réglée
+      - **Téléphone perdu ?** Utilisez vos codes de secours ou contactez l'administrateur
+    WEBAUTHN: |
+      # Configurer une clé de sécurité
+
+      ## Qu'est-ce qu'une clé de sécurité ?
+
+      Une clé de sécurité est un moyen sécurisé de se connecter en utilisant :
+
+      - **Touch ID / Face ID** - Intégré à votre Mac, iPhone ou iPad
+      - **Windows Hello** - Empreinte digitale ou reconnaissance faciale sous Windows
+      - **Clé USB** - Une clé physique comme YubiKey
+
+      ## Configuration
+
+      1. Cliquez sur "Ajouter une clé de sécurité"
+      2. Votre navigateur demande quel type de clé vous souhaitez utiliser
+      3. Choisissez "Cet appareil" pour Touch ID/Face ID, ou connectez votre clé USB
+      4. Confirmez avec votre empreinte digitale, votre visage ou en touchant la clé
+
+      ## Passkeys (Clés synchronisées)
+
+      Les navigateurs modernes peuvent synchroniser votre clé via iCloud ou Google :
+
+      - **Trousseau iCloud** - Fonctionne sur tous vos appareils Apple
+      - **Gestionnaire de mots de passe Google** - Fonctionne dans Chrome sur tous les appareils
+
+      Ainsi, vous pouvez utiliser la même clé sur plusieurs appareils.
+
+      ## Plusieurs appareils
+
+      Vous pouvez enregistrer plusieurs clés de sécurité. Utile si vous vous connectez depuis différents appareils ou si vous voulez une sauvegarde.
+    BACKUPCODES: |
+      # Codes de secours
+
+      ## Que sont les codes de secours ?
+
+      Les codes de secours sont des codes à usage unique que vous pouvez utiliser si vous n'avez pas accès à votre méthode de vérification habituelle (téléphone perdu, cassé, etc.).
+
+      ## Important
+
+      - Chaque code ne fonctionne qu'une seule fois
+      - Conservez-les dans un endroit sûr (pas sur votre téléphone !)
+      - Imprimez-les ou enregistrez-les dans un gestionnaire de mots de passe
+
+      ## Codes perdus ?
+
+      Si vous avez utilisé tous vos codes de secours ou les avez perdus, vous pouvez en créer de nouveaux dans les paramètres de votre profil. Les anciens codes deviendront alors invalides.
+
+      ## Complètement bloqué ?
+
+      Contactez l'administrateur. Il peut réinitialiser vos paramètres MFA pour que vous puissiez les reconfigurer.

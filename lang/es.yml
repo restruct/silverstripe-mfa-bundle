@@ -1,0 +1,95 @@
+es:
+  Restruct\MFABundle\Controllers\MFAHelpController:
+    NAV_OVERVIEW: 'Resumen'
+    NAV_TOTP: 'App Authenticator'
+    NAV_WEBAUTHN: 'Llave de seguridad'
+    NAV_BACKUPCODES: 'Códigos de respaldo'
+    INDEX: |
+      # Autenticación de dos factores (MFA)
+
+      La autenticación de dos factores (MFA) añade una capa adicional de seguridad a tu cuenta. Además de tu contraseña, necesitas un segundo factor para iniciar sesión.
+
+      ## Métodos disponibles
+
+      - **App authenticator** - Usa una aplicación como Google Authenticator o 1Password
+      - **Llave de seguridad** - Usa Touch ID, Face ID o una llave USB
+
+      ## Códigos de respaldo
+
+      Al configurar MFA, recibes códigos de respaldo. Guárdalos en un lugar seguro - puedes usarlos si no tienes acceso a tu método de verificación habitual.
+    TOTP: |
+      # Configurar App Authenticator
+
+      ## ¿Qué necesitas?
+
+      Una aplicación authenticator en tu teléfono, por ejemplo:
+
+      - Google Authenticator (gratis)
+      - Microsoft Authenticator (gratis)
+      - 1Password, Bitwarden o Authy
+
+      ## Configuración
+
+      1. Abre la aplicación authenticator en tu teléfono
+      2. Elige "Añadir cuenta" o el icono +
+      3. Escanea el código QR que aparece en pantalla
+      4. Introduce el código de 6 dígitos que muestra la aplicación
+
+      ## Iniciar sesión
+
+      Al iniciar sesión, abre la aplicación e introduce el código de 6 dígitos actual. El código cambia cada 30 segundos.
+
+      ## ¿Problemas?
+
+      - **¿El código no funciona?** Comprueba si la hora de tu teléfono está configurada correctamente
+      - **¿Teléfono perdido?** Usa tus códigos de respaldo o contacta al administrador
+    WEBAUTHN: |
+      # Configurar llave de seguridad
+
+      ## ¿Qué es una llave de seguridad?
+
+      Una llave de seguridad es una forma segura de iniciar sesión usando:
+
+      - **Touch ID / Face ID** - Integrado en tu Mac, iPhone o iPad
+      - **Windows Hello** - Huella dactilar o reconocimiento facial en Windows
+      - **Llave USB** - Una llave física como YubiKey
+
+      ## Configuración
+
+      1. Haz clic en "Añadir llave de seguridad"
+      2. Tu navegador pregunta qué tipo de llave quieres usar
+      3. Elige "Este dispositivo" para Touch ID/Face ID, o conecta tu llave USB
+      4. Confirma con tu huella dactilar, cara o tocando la llave
+
+      ## Passkeys (Llaves sincronizadas)
+
+      Los navegadores modernos pueden sincronizar tu llave a través de iCloud o Google:
+
+      - **Llavero de iCloud** - Funciona en todos tus dispositivos Apple
+      - **Gestor de contraseñas de Google** - Funciona en Chrome en todos los dispositivos
+
+      Así puedes usar la misma llave en múltiples dispositivos.
+
+      ## Múltiples dispositivos
+
+      Puedes registrar múltiples llaves de seguridad. Útil si inicias sesión desde diferentes dispositivos o quieres una copia de seguridad.
+    BACKUPCODES: |
+      # Códigos de respaldo
+
+      ## ¿Qué son los códigos de respaldo?
+
+      Los códigos de respaldo son códigos de un solo uso que puedes usar si no tienes acceso a tu método de verificación habitual (teléfono perdido, roto, etc.).
+
+      ## Importante
+
+      - Cada código solo funciona una vez
+      - Guárdalos en un lugar seguro (¡no en tu teléfono!)
+      - Imprímelos o guárdalos en un gestor de contraseñas
+
+      ## ¿Códigos perdidos?
+
+      Si has usado todos tus códigos de respaldo o los has perdido, puedes crear nuevos en la configuración de tu perfil. Los códigos antiguos quedarán invalidados.
+
+      ## ¿Completamente bloqueado?
+
+      Contacta al administrador. Puede restablecer tu configuración MFA para que puedas configurarla de nuevo.
