@@ -122,16 +122,25 @@ BYPASS_MFA=1
 |---------|-------|---------|-------------|
 | `code_length` | `Method` | 6 | Number of digits (6-8) |
 | `secret_length` | `RegisterHandler` | 16 | Secret key length |
-| `user_help_link` | `RegisterHandler` | SS docs | Help link during setup |
 
 ### SilverStripe WebAuthn settings (set directly on SS classes)
 
 | Setting | Class | Default | Description |
 |---------|-------|---------|-------------|
 | `authenticator_attachment` | `RegisterHandler` | `null`* | Allowed authenticator types |
-| `user_help_link` | `RegisterHandler` | SS docs | Help link during setup |
 
 *This bundle sets the default to `null` (allow both). SilverStripe's default is `cross-platform` (security keys only).
+
+### Help link settings (set by this bundle)
+
+| Class | Setting | Default |
+|-------|---------|---------|
+| `SilverStripe\TOTP\RegisterHandler` | `user_help_link` | `/mfa-help/totp` |
+| `SilverStripe\WebAuthn\RegisterHandler` | `user_help_link` | `/mfa-help/webauthn` |
+| `SilverStripe\MFA\Authenticator\LoginHandler` | `user_help_link` | `/mfa-help/` |
+| `SilverStripe\MFA\BackupCode\RegisterHandler` | `user_help_link` | `/mfa-help/backup-codes` |
+
+Override these if you use a custom URL segment or external help pages.
 
 **Authenticator attachment options:**
 - `~` or `null`: Both platform and cross-platform (recommended)
