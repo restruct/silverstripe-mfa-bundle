@@ -78,11 +78,23 @@ SilverStripe\WebAuthn\RegisterHandler:
 
 ### 4. MFA requirement (enabled by default)
 
-This bundle automatically enables "MFA Required" on first `dev/build`. Users will be prompted to set up MFA on their next login.
+This bundle automatically enables "MFA Required" on first `dev/build` and hides the SiteConfig MFA settings. Users will be prompted to set up MFA on their next login.
 
-To disable MFA requirement: **Settings → Access → MFA Required** (uncheck)
+A **grace period of 6 months** is set by default, allowing users to skip MFA setup temporarily. After the grace period expires, MFA becomes mandatory.
 
-The `required_mfa_methods` setting (default: 1) determines how many methods users must register.
+```yaml
+# Customize grace period (default: 180 days = 6 months)
+Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
+  grace_period_days: 90   # 3 months
+  # grace_period_days: 0  # No grace period - MFA required immediately
+```
+
+To show the MFA settings in SiteConfig (for manual control):
+
+```yaml
+Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
+  show_mfa_settings: true
+```
 
 ### 5. Disable during development (optional)
 
@@ -94,13 +106,15 @@ BYPASS_MFA=1
 
 ## Configuration Reference
 
-### Bundle extension settings
+### Bundle settings
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `issuer` | SiteConfig Title | App name shown in authenticator |
-| `period` | 30 | Seconds per code |
-| `algorithm` | sha1 | Hash algorithm (sha1/sha256/sha512) |
+| Class | Setting | Default | Description |
+|-------|---------|---------|-------------|
+| `SiteConfigMFAExtension` | `grace_period_days` | 180 | Days users can skip MFA (0 = no grace period) |
+| `SiteConfigMFAExtension` | `show_mfa_settings` | false | Show MFA fields in SiteConfig |
+| `TOTPConfigExtension` | `issuer` | SiteConfig Title | App name shown in authenticator |
+| `TOTPConfigExtension` | `period` | 30 | Seconds per code |
+| `TOTPConfigExtension` | `algorithm` | sha1 | Hash algorithm (sha1/sha256/sha512) |
 
 ### SilverStripe TOTP settings (set directly on SS classes)
 
