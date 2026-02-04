@@ -75,16 +75,14 @@ SilverStripe\WebAuthn\RegisterHandler:
 
 **Note:** WebAuthn requires HTTPS and a supported browser (Chrome, Firefox, Safari, Edge).
 
-### 4. Enable MFA requirement (optional)
 
-In the CMS: **Settings → Access → MFA Required**
+### 4. MFA requirement (enabled by default)
 
-Or via config:
+This bundle automatically enables "MFA Required" on first `dev/build`. Users will be prompted to set up MFA on their next login.
 
-```yaml
-SilverStripe\MFA\Service\EnforcementManager:
-  required_mfa_methods: 1
-```
+To disable MFA requirement: **Settings → Access → MFA Required** (uncheck)
+
+The `required_mfa_methods` setting (default: 1) determines how many methods users must register.
 
 ### 5. Disable during development (optional)
 
