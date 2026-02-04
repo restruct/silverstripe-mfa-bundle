@@ -21,7 +21,7 @@ class SiteConfigMFAExtension extends DataExtension
         // Get the raw database value to check if it's been set
         $record = DB::query(
             "SELECT MFARequired FROM SiteConfig WHERE ID = " . (int)$siteConfig->ID
-        )->first();
+        )->record();
 
         // If MFARequired is NULL (never set), enable it by default
         if ($record && $record['MFARequired'] === null) {
