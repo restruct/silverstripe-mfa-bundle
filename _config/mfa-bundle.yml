@@ -1,5 +1,5 @@
 ---
-Name: restruct-mfa-bundle
+Name: mfa-bundle
 After:
   - 'totpauthenticatorconfig'
   - 'MFAWebAuthnAuthenticator'

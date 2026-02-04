@@ -1,7 +1,10 @@
 ---
-Name: restruct-mfa-bundle-routes
+Name: mfa-bundle-routes
 After:
   - '#rootroutes'
+Except:
+  envorconstant:
+    - DISABLE_MFA_HELP
 ---
 SilverStripe\Control\Director:
   rules:

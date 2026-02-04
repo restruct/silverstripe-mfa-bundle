@@ -222,7 +222,7 @@ This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum f
 
 ## Help Pages
 
-This bundle includes Dutch help pages served locally at `/mfa-help/`:
+This bundle includes translatable help pages served at `/mfa-help/`:
 
 | URL | Content |
 |-----|---------|
@@ -231,19 +231,59 @@ This bundle includes Dutch help pages served locally at `/mfa-help/`:
 | `/mfa-help/webauthn` | Security key / biometrics setup |
 | `/mfa-help/backup-codes` | Backup codes explanation |
 
-### Customizing Help Content
+Help pages automatically display in the logged-in user's CMS locale (from `Member.Locale`), falling back to the site's default locale. Translations are included for: English, Dutch, German, French, and Spanish.
 
-Override the content via config:
+### Disabling Help Pages
 
-```yaml
-Restruct\MFABundle\Controllers\MFAHelpController:
-  help_content:
-    totp:
-      title: 'Custom Title'
-      content: '<p>Your custom HTML content...</p>'
+To disable the built-in help pages entirely, set `DISABLE_MFA_HELP` as an environment variable or PHP constant:
+
+```env
+# .env
+DISABLE_MFA_HELP=1
 ```
 
-Or point to your own URLs:
+Or in `app/_config.php`:
+
+```php
+define('DISABLE_MFA_HELP', true);
+```
+
+### Changing the URL Segment
+
+To serve help pages at a different URL (e.g., `/hulp/`):
+
+1. Disable the default route via `DISABLE_MFA_HELP`
+2. Configure your custom URL segment and Director rule:
+
+```yaml
+# app/_config/mfa-help.yml
+Restruct\MFABundle\Controllers\MFAHelpController:
+  url_segment: 'hulp'
+
+SilverStripe\Control\Director:
+  rules:
+    'hulp': 'Restruct\MFABundle\Controllers\MFAHelpController'
+```
+
+3. Update the help URLs to match your custom segment:
+
+```yaml
+SilverStripe\TOTP\RegisterHandler:
+  user_help_link: '/hulp/totp'
+
+SilverStripe\WebAuthn\RegisterHandler:
+  user_help_link: '/hulp/webauthn'
+
+SilverStripe\MFA\Authenticator\LoginHandler:
+  user_help_link: '/hulp/'
+
+SilverStripe\MFA\BackupCode\RegisterHandler:
+  user_help_link: '/hulp/backup-codes'
+```
+
+### Customizing Help Content
+
+Override the translations via lang files in your project, or point to your own URLs:
 
 ```yaml
 SilverStripe\TOTP\RegisterHandler:
