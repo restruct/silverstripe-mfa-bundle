@@ -4,29 +4,36 @@ declare(strict_types=1);
 
 namespace Restruct\MFABundle\Extensions;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
+use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DB;
 
 /**
- * Sets MFA as required by default when the bundle is installed.
- * Admins can still disable it via Settings → Access if needed.
+ * Forces MFA to be required by default and hides the SiteConfig fields.
+ *
+ * To allow admins to disable MFA via CMS, set in your config:
+ *   Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
+ *     show_mfa_settings: true
  */
-class SiteConfigMFAExtension extends DataExtension
+class SiteConfigMFAExtension extends Extension
 {
+    private static bool $show_mfa_settings = false;
+
     public function requireDefaultRecords(): void
     {
-        // Only run once - check if MFARequired has ever been explicitly set
-        $siteConfig = $this->owner;
+        // Always ensure MFA is enabled
+        DB::query("UPDATE SiteConfig SET MFARequired = 1");
+        DB::alteration_message('MFA requirement enforced', 'changed');
+    }
 
-        // Get the raw database value to check if it's been set
-        $record = DB::query(
-            "SELECT MFARequired FROM SiteConfig WHERE ID = " . (int)$siteConfig->ID
-        )->record();
-
-        // If MFARequired is NULL (never set), enable it by default
-        if ($record && $record['MFARequired'] === null) {
-            DB::query("UPDATE SiteConfig SET MFARequired = 1 WHERE ID = " . (int)$siteConfig->ID);
-            DB::alteration_message('MFA enabled by default (can be disabled in Settings → Access)', 'created');
+    public function updateCMSFields(FieldList $fields): void
+    {
+        // Hide MFA settings unless config allows showing them
+        if (!$this->config()->get('show_mfa_settings')) {
+            $fields->removeByName([
+                'MFARequired',
+                'MFAGracePeriodExpires',
+            ]);
         }
     }
 }
