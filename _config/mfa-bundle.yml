@@ -32,6 +32,11 @@ SilverStripe\MFA\Authenticator\LoginHandler:
 SilverStripe\MFA\BackupCode\RegisterHandler:
   user_help_link: '/mfa-help/backup-codes'
 
+# Enable MFA by default on first dev/build (can be disabled in Settings → Access)
+SilverStripe\SiteConfig\SiteConfig:
+  extensions:
+    - Restruct\MFABundle\Extensions\SiteConfigMFAExtension
+
 # Add admin interface for managing user MFA methods
 SilverStripe\Security\Member:
   extensions:
