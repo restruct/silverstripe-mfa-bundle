@@ -1,0 +1,95 @@
+nl:
+  Restruct\MFABundle\Controllers\MFAHelpController:
+    NAV_OVERVIEW: 'Overzicht'
+    NAV_TOTP: 'Authenticator App'
+    NAV_WEBAUTHN: 'Beveiligingssleutel'
+    NAV_BACKUPCODES: 'Herstelcodes'
+    INDEX: |
+      # Tweestapsverificatie (MFA)
+
+      Tweestapsverificatie (MFA) voegt een extra beveiligingslaag toe aan je account. Naast je wachtwoord heb je een tweede factor nodig om in te loggen.
+
+      ## Beschikbare methodes
+
+      - **Authenticator app** - Gebruik een app zoals Google Authenticator of 1Password
+      - **Beveiligingssleutel** - Gebruik Touch ID, Face ID, of een USB-sleutel
+
+      ## Herstelcodes
+
+      Bij het instellen van MFA ontvang je herstelcodes. Bewaar deze veilig - je kunt ze gebruiken als je geen toegang hebt tot je normale verificatiemethode.
+    TOTP: |
+      # Authenticator App Instellen
+
+      ## Wat heb je nodig?
+
+      Een authenticator app op je telefoon, bijvoorbeeld:
+
+      - Google Authenticator (gratis)
+      - Microsoft Authenticator (gratis)
+      - 1Password, Bitwarden, of Authy
+
+      ## Instellen
+
+      1. Open de authenticator app op je telefoon
+      2. Kies "Account toevoegen" of het + icoon
+      3. Scan de QR-code die op het scherm verschijnt
+      4. Voer de 6-cijferige code in die de app toont
+
+      ## Inloggen
+
+      Bij het inloggen open je de app en voer je de actuele 6-cijferige code in. De code verandert elke 30 seconden.
+
+      ## Problemen?
+
+      - **Code werkt niet?** Controleer of de tijd op je telefoon correct is ingesteld
+      - **Telefoon kwijt?** Gebruik je herstelcodes of neem contact op met de beheerder
+    WEBAUTHN: |
+      # Beveiligingssleutel Instellen
+
+      ## Wat is een beveiligingssleutel?
+
+      Een beveiligingssleutel is een veilige manier om in te loggen met:
+
+      - **Touch ID / Face ID** - Ingebouwd in je Mac, iPhone of iPad
+      - **Windows Hello** - Vingerafdruk of gezichtsherkenning op Windows
+      - **USB-sleutel** - Een fysieke sleutel zoals YubiKey
+
+      ## Instellen
+
+      1. Klik op "Beveiligingssleutel toevoegen"
+      2. Je browser vraagt welk type sleutel je wilt gebruiken
+      3. Kies "Dit apparaat" voor Touch ID/Face ID, of sluit je USB-sleutel aan
+      4. Bevestig met je vingerafdruk, gezicht, of door de sleutel aan te raken
+
+      ## Passkeys (gesynchroniseerde sleutels)
+
+      Moderne browsers kunnen je sleutel synchroniseren via iCloud of Google:
+
+      - **iCloud Sleutelhanger** - Werkt op al je Apple apparaten
+      - **Google Wachtwoordmanager** - Werkt in Chrome op alle apparaten
+
+      Zo kun je dezelfde sleutel op meerdere apparaten gebruiken.
+
+      ## Meerdere apparaten
+
+      Je kunt meerdere beveiligingssleutels registreren. Handig als je vanaf verschillende apparaten inlogt of een backup wilt.
+    BACKUPCODES: |
+      # Herstelcodes
+
+      ## Wat zijn herstelcodes?
+
+      Herstelcodes zijn eenmalige codes die je kunt gebruiken als je geen toegang hebt tot je normale verificatiemethode (telefoon kwijt, kapot, etc.).
+
+      ## Belangrijk
+
+      - Elke code werkt maar één keer
+      - Bewaar ze op een veilige plek (niet op je telefoon!)
+      - Print ze uit of sla ze op in een wachtwoordmanager
+
+      ## Codes kwijt?
+
+      Als je al je herstelcodes hebt gebruikt of kwijt bent, kun je nieuwe aanmaken in je profielinstellingen. De oude codes worden dan ongeldig.
+
+      ## Helemaal buitengesloten?
+
+      Neem contact op met de beheerder. Zij kunnen je MFA-instellingen resetten zodat je opnieuw kunt instellen.

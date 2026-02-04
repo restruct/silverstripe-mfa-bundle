@@ -7,13 +7,13 @@ namespace Restruct\MFABundle\Controllers;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Core\Manifest\ModuleResourceLoader;
-use SilverStripe\View\ArrayData;
-use SilverStripe\View\Requirements;
+ use SilverStripe\View\Requirements;
 
 /**
  * Simple controller to serve MFA help pages.
  * Access via /mfa-help/totp, /mfa-help/webauthn, etc.
+ *
+ * Content is translatable via lang files using markdown syntax.
  */
 class MFAHelpController extends Controller
 {
@@ -33,114 +33,6 @@ class MFAHelpController extends Controller
         'backup-codes' => 'backupcodes',
     ];
 
-    /**
-     * Help content in Dutch. Override via config or create your own controller.
-     */
-    private static array $help_content = [
-        'index' => [
-            'title' => 'Tweestapsverificatie (MFA)',
-            'content' => <<<'HTML'
-<p>Tweestapsverificatie (MFA) voegt een extra beveiligingslaag toe aan je account.
-Naast je wachtwoord heb je een tweede factor nodig om in te loggen.</p>
-
-<h3>Beschikbare methodes</h3>
-<ul>
-    <li><strong>Authenticator app</strong> - Gebruik een app zoals Google Authenticator of 1Password</li>
-    <li><strong>Beveiligingssleutel</strong> - Gebruik Touch ID, Face ID, of een USB-sleutel</li>
-</ul>
-
-<h3>Herstelcodes</h3>
-<p>Bij het instellen van MFA ontvang je herstelcodes. Bewaar deze veilig -
-je kunt ze gebruiken als je geen toegang hebt tot je normale verificatiemethode.</p>
-HTML,
-        ],
-        'totp' => [
-            'title' => 'Authenticator App Instellen',
-            'content' => <<<'HTML'
-<h3>Wat heb je nodig?</h3>
-<p>Een authenticator app op je telefoon, bijvoorbeeld:</p>
-<ul>
-    <li>Google Authenticator (gratis)</li>
-    <li>Microsoft Authenticator (gratis)</li>
-    <li>1Password, Bitwarden, of Authy</li>
-</ul>
-
-<h3>Instellen</h3>
-<ol>
-    <li>Open de authenticator app op je telefoon</li>
-    <li>Kies "Account toevoegen" of het + icoon</li>
-    <li>Scan de QR-code die op het scherm verschijnt</li>
-    <li>Voer de 6-cijferige code in die de app toont</li>
-</ol>
-
-<h3>Inloggen</h3>
-<p>Bij het inloggen open je de app en voer je de actuele 6-cijferige code in.
-De code verandert elke 30 seconden.</p>
-
-<h3>Problemen?</h3>
-<ul>
-    <li><strong>Code werkt niet?</strong> Controleer of de tijd op je telefoon correct is ingesteld</li>
-    <li><strong>Telefoon kwijt?</strong> Gebruik je herstelcodes of neem contact op met de beheerder</li>
-</ul>
-HTML,
-        ],
-        'webauthn' => [
-            'title' => 'Beveiligingssleutel Instellen',
-            'content' => <<<'HTML'
-<h3>Wat is een beveiligingssleutel?</h3>
-<p>Een beveiligingssleutel is een veilige manier om in te loggen met:</p>
-<ul>
-    <li><strong>Touch ID / Face ID</strong> - Ingebouwd in je Mac, iPhone of iPad</li>
-    <li><strong>Windows Hello</strong> - Vingerafdruk of gezichtsherkenning op Windows</li>
-    <li><strong>USB-sleutel</strong> - Een fysieke sleutel zoals YubiKey</li>
-</ul>
-
-<h3>Instellen</h3>
-<ol>
-    <li>Klik op "Beveiligingssleutel toevoegen"</li>
-    <li>Je browser vraagt welk type sleutel je wilt gebruiken</li>
-    <li>Kies "Dit apparaat" voor Touch ID/Face ID, of sluit je USB-sleutel aan</li>
-    <li>Bevestig met je vingerafdruk, gezicht, of door de sleutel aan te raken</li>
-</ol>
-
-<h3>Passkeys (gesynchroniseerde sleutels)</h3>
-<p>Moderne browsers kunnen je sleutel synchroniseren via iCloud of Google:</p>
-<ul>
-    <li><strong>iCloud Sleutelhanger</strong> - Werkt op al je Apple apparaten</li>
-    <li><strong>Google Wachtwoordmanager</strong> - Werkt in Chrome op alle apparaten</li>
-</ul>
-<p>Zo kun je dezelfde sleutel op meerdere apparaten gebruiken.</p>
-
-<h3>Meerdere apparaten</h3>
-<p>Je kunt meerdere beveiligingssleutels registreren. Handig als je vanaf
-verschillende apparaten inlogt of een backup wilt.</p>
-HTML,
-        ],
-        'backupcodes' => [
-            'title' => 'Herstelcodes',
-            'content' => <<<'HTML'
-<h3>Wat zijn herstelcodes?</h3>
-<p>Herstelcodes zijn eenmalige codes die je kunt gebruiken als je geen toegang hebt
-tot je normale verificatiemethode (telefoon kwijt, kapot, etc.).</p>
-
-<h3>Belangrijk</h3>
-<ul>
-    <li>Elke code werkt maar één keer</li>
-    <li>Bewaar ze op een veilige plek (niet op je telefoon!)</li>
-    <li>Print ze uit of sla ze op in een wachtwoordmanager</li>
-</ul>
-
-<h3>Codes kwijt?</h3>
-<p>Als je al je herstelcodes hebt gebruikt of kwijt bent, kun je nieuwe aanmaken
-in je profielinstellingen. De oude codes worden dan ongeldig.</p>
-
-<h3>Helemaal buitengesloten?</h3>
-<p>Neem contact op met de beheerder. Zij kunnen je MFA-instellingen resetten
-zodat je opnieuw kunt instellen.</p>
-HTML,
-        ],
-    ];
-
     protected function init(): void
     {
         parent::init();
@@ -158,7 +50,8 @@ HTML,
     line-height: 1.6;
 }
 .mfa-help h1 { margin-bottom: 1.5rem; color: #333; }
-.mfa-help h3 { margin-top: 1.5rem; color: #444; }
+.mfa-help h2 { margin-top: 1.5rem; color: #444; font-size: 1.3rem; }
+.mfa-help h3 { margin-top: 1.5rem; color: #444; font-size: 1.1rem; }
 .mfa-help ul, .mfa-help ol { margin: 1rem 0; padding-left: 1.5rem; }
 .mfa-help li { margin: 0.5rem 0; }
 .mfa-help p { margin: 1rem 0; }
@@ -171,55 +64,209 @@ CSS
 
     public function index(HTTPRequest $request): HTTPResponse|array
     {
-        return $this->renderHelp('index');
+        return $this->renderHelp('INDEX');
     }
 
     public function totp(HTTPRequest $request): HTTPResponse|array
     {
-        return $this->renderHelp('totp');
+        return $this->renderHelp('TOTP');
     }
 
     public function webauthn(HTTPRequest $request): HTTPResponse|array
     {
-        return $this->renderHelp('webauthn');
+        return $this->renderHelp('WEBAUTHN');
     }
 
     public function backupcodes(HTTPRequest $request): HTTPResponse|array
     {
-        return $this->renderHelp('backupcodes');
+        return $this->renderHelp('BACKUPCODES');
     }
 
-    protected function renderHelp(string $page): array
+    protected function renderHelp(string $key): array
     {
-        $content = $this->config()->get('help_content')[$page] ?? null;
+        $markdown = _t(__CLASS__ . '.' . $key, $this->getDefaultContent($key));
+        $html = $this->parseMarkdown($markdown);
 
-        if (!$content) {
-            return $this->httpError(404, 'Help page not found');
+        // Extract title from first h1
+        $title = '';
+        if (preg_match('/<h1[^>]*>(.*?)<\/h1>/i', $html, $matches)) {
+            $title = strip_tags($matches[1]);
         }
 
         return [
-            'Title' => $content['title'],
-            'Content' => $content['content'],
-            'Navigation' => $this->getNavigation($page),
+            'Title' => $title ?: 'MFA Help',
+            'Content' => $html,
+            'Navigation' => $this->getNavigation($key),
         ];
     }
 
-    protected function getNavigation(string $currentPage): string
+    /**
+     * Simple markdown to HTML parser for basic formatting.
+     */
+    protected function parseMarkdown(string $markdown): string
+    {
+        $html = htmlspecialchars($markdown, ENT_NOQUOTES, 'UTF-8');
+
+        // Headers (must be at start of line)
+        $html = preg_replace('/^### (.+)$/m', '<h3>$1</h3>', $html);
+        $html = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $html);
+        $html = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $html);
+
+        // Bold and italic
+        $html = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $html);
+        $html = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $html);
+
+        // Unordered lists
+        $html = preg_replace_callback('/(?:^- .+$\n?)+/m', function ($matches) {
+            $items = preg_replace('/^- (.+)$/m', '<li>$1</li>', trim($matches[0]));
+            return "<ul>\n{$items}\n</ul>\n";
+        }, $html);
+
+        // Ordered lists
+        $html = preg_replace_callback('/(?:^\d+\. .+$\n?)+/m', function ($matches) {
+            $items = preg_replace('/^\d+\. (.+)$/m', '<li>$1</li>', trim($matches[0]));
+            return "<ol>\n{$items}\n</ol>\n";
+        }, $html);
+
+        // Paragraphs (text blocks separated by blank lines, not already wrapped)
+        $html = preg_replace('/(?<![>\n])(\n\n)(?![<\n])/', '</p>$1<p>', $html);
+
+        // Wrap content in paragraphs if it starts with text
+        if (!preg_match('/^<[holu]/', trim($html))) {
+            $html = '<p>' . $html;
+        }
+        if (!preg_match('/<\/[holu].*>$/', trim($html))) {
+            $html .= '</p>';
+        }
+
+        // Clean up empty paragraphs and fix spacing
+        $html = preg_replace('/<p>\s*<\/p>/', '', $html);
+        $html = preg_replace('/<p>\s*<([holu])/','<$1', $html);
+        $html = preg_replace('/<\/([holu][l1-3]?)>\s*<\/p>/','</$1>', $html);
+
+        return trim($html);
+    }
+
+    /**
+     * Default English content (fallback).
+     */
+    protected function getDefaultContent(string $key): string
+    {
+        $content = [
+            'INDEX' => <<<'MD'
+# Two-Factor Authentication (MFA)
+
+Two-factor authentication (MFA) adds an extra layer of security to your account. In addition to your password, you need a second factor to log in.
+
+## Available Methods
+
+- **Authenticator app** - Use an app like Google Authenticator or 1Password
+- **Security key** - Use Touch ID, Face ID, or a USB key
+
+## Backup Codes
+
+When setting up MFA, you receive backup codes. Store these safely - you can use them if you don't have access to your normal verification method.
+MD,
+            'TOTP' => <<<'MD'
+# Setting Up Authenticator App
+
+## What Do You Need?
+
+An authenticator app on your phone, for example:
+
+- Google Authenticator (free)
+- Microsoft Authenticator (free)
+- 1Password, Bitwarden, or Authy
+
+## Setup
+
+1. Open the authenticator app on your phone
+2. Choose "Add account" or the + icon
+3. Scan the QR code that appears on screen
+4. Enter the 6-digit code shown in the app
+
+## Logging In
+
+When logging in, open the app and enter the current 6-digit code. The code changes every 30 seconds.
+
+## Problems?
+
+- **Code not working?** Check if your phone's time is set correctly
+- **Lost phone?** Use your backup codes or contact the administrator
+MD,
+            'WEBAUTHN' => <<<'MD'
+# Setting Up Security Key
+
+## What Is a Security Key?
+
+A security key is a secure way to log in using:
+
+- **Touch ID / Face ID** - Built into your Mac, iPhone or iPad
+- **Windows Hello** - Fingerprint or facial recognition on Windows
+- **USB key** - A physical key like YubiKey
+
+## Setup
+
+1. Click "Add security key"
+2. Your browser asks which type of key you want to use
+3. Choose "This device" for Touch ID/Face ID, or connect your USB key
+4. Confirm with your fingerprint, face, or by touching the key
+
+## Passkeys (Synced Keys)
+
+Modern browsers can sync your key via iCloud or Google:
+
+- **iCloud Keychain** - Works on all your Apple devices
+- **Google Password Manager** - Works in Chrome on all devices
+
+This way you can use the same key on multiple devices.
+
+## Multiple Devices
+
+You can register multiple security keys. Useful if you log in from different devices or want a backup.
+MD,
+            'BACKUPCODES' => <<<'MD'
+# Backup Codes
+
+## What Are Backup Codes?
+
+Backup codes are one-time codes you can use if you don't have access to your normal verification method (phone lost, broken, etc.).
+
+## Important
+
+- Each code only works once
+- Store them in a safe place (not on your phone!)
+- Print them or save them in a password manager
+
+## Lost Codes?
+
+If you've used all your backup codes or lost them, you can create new ones in your profile settings. The old codes will then become invalid.
+
+## Completely Locked Out?
+
+Contact the administrator. They can reset your MFA settings so you can set up again.
+MD,
+        ];
+
+        return $content[$key] ?? '';
+    }
+
+    protected function getNavigation(string $currentKey): string
     {
         $pages = [
-            'index' => 'Overzicht',
-            'totp' => 'Authenticator App',
-            'webauthn' => 'Beveiligingssleutel',
-            'backupcodes' => 'Herstelcodes',
+            'INDEX' => ['url' => '', 'label' => _t(__CLASS__ . '.NAV_OVERVIEW', 'Overview')],
+            'TOTP' => ['url' => 'totp', 'label' => _t(__CLASS__ . '.NAV_TOTP', 'Authenticator App')],
+            'WEBAUTHN' => ['url' => 'webauthn', 'label' => _t(__CLASS__ . '.NAV_WEBAUTHN', 'Security Key')],
+            'BACKUPCODES' => ['url' => 'backup-codes', 'label' => _t(__CLASS__ . '.NAV_BACKUPCODES', 'Backup Codes')],
         ];
 
         $links = [];
-        foreach ($pages as $key => $label) {
-            $url = $this->Link($key === 'index' ? '' : $key);
-            if ($key === $currentPage) {
-                $links[] = "<strong>{$label}</strong>";
+        foreach ($pages as $key => $page) {
+            $url = $this->Link($page['url']);
+            if ($key === $currentKey) {
+                $links[] = "<strong>{$page['label']}</strong>";
             } else {
-                $links[] = "<a href=\"{$url}\">{$label}</a>";
+                $links[] = "<a href=\"{$url}\">{$page['label']}</a>";
             }
         }
 
