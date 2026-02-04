@@ -2,6 +2,13 @@
 
 Portable MFA bundle for Silverstripe 5 with TOTP (Google Authenticator) and WebAuthn (security keys/biometrics) support.
 
+## Quick Start
+
+1. `composer require restruct/silverstripe-mfa-bundle`
+2. Add `SS_MFA_SECRET_KEY` to `.env`, run `dev/build`
+
+That's it. MFA is enforced with a 6-month grace period out of the box.
+
 ## Features
 
 - Bundles `silverstripe/mfa`, `silverstripe/totp-authenticator`, and `silverstripe/webauthn-authenticator`
