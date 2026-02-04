@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Restruct\MFABundle\Extensions;
 
+use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DB;
@@ -18,6 +19,7 @@ use SilverStripe\ORM\DB;
  */
 class SiteConfigMFAExtension extends Extension
 {
+    use Configurable;
     private static bool $show_mfa_settings = false;
 
     private static int $grace_period_days = 180;
