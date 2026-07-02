@@ -3,6 +3,7 @@
 namespace Restruct\MFABundle\Extensions;
 
 use OTPHP\TOTP;
+use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extension;
 use SilverStripe\Security\Member;
@@ -18,7 +19,7 @@ class TOTPConfigExtension extends Extension
 
     /**
      * Issuer name shown in authenticator apps (e.g., "My Company CMS")
-     * If not set, falls back to SiteConfig::Title
+     * Fallback chain: explicit issuer config → SiteConfig::Title → LeftAndMain.application_name
      */
     private static ?string $issuer = null;
 
@@ -41,6 +42,13 @@ class TOTPConfigExtension extends Extension
         $issuer = $this->config()->get('issuer');
         if ($issuer) {
             $totp->setIssuer($issuer);
+        } elseif (!$totp->getIssuer()) {
+            # RegisterHandler sets SiteConfig::Title as issuer, but that may be empty
+            # (e.g. projects without SiteTree/CMS). Fall back to LeftAndMain.application_name.
+            $appName = LeftAndMain::config()->get('application_name');
+            if ($appName) {
+                $totp->setIssuer($appName);
+            }
         }
 
         $period = $this->config()->get('period');
