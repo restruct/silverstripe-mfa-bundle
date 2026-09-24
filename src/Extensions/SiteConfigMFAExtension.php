@@ -24,7 +24,29 @@ class SiteConfigMFAExtension extends Extension
 
     private static int $grace_period_days = 180;
 
+    /**
+     * Silverstripe 5 name of the dev/build hook (DataObject::requireDefaultRecords() calls
+     * extend('requireDefaultRecords')). Framework 6 renamed it, see onRequireDefaultRecords().
+     */
     public function requireDefaultRecords(): void
+    {
+        $this->enforceMFARequirement();
+    }
+
+    /**
+     * Silverstripe 6 name of the same hook: framework 6 calls extend('onRequireDefaultRecords')
+     * and never calls the old name, so without this method nothing is enforced on 6.
+     * Each major fires exactly one of the two names, so the work runs once per build.
+     */
+    public function onRequireDefaultRecords(): void
+    {
+        $this->enforceMFARequirement();
+    }
+
+    /**
+     * Force MFARequired on and set the grace period, on every dev/build.
+     */
+    protected function enforceMFARequirement(): void
     {
         // Always ensure MFA is enabled
         DB::query("UPDATE SiteConfig SET MFARequired = 1");

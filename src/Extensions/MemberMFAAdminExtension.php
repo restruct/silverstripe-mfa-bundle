@@ -11,7 +11,7 @@ use SilverStripe\Forms\GridField\GridFieldAddNewButton;
 use SilverStripe\Forms\GridField\GridFieldEditButton;
 use SilverStripe\MFA\Extension\MemberExtension as BaseMFAMemberExtension;
 use SilverStripe\MFA\Model\RegisteredMethod;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\Security;
@@ -21,9 +21,12 @@ use SilverStripe\Security\Security;
  * Allows admins with MFA_ADMINISTER_REGISTERED_METHODS permission to
  * view and delete MFA methods for any user.
  *
- * @extends DataExtension<Member>
+ * Extends Extension rather than DataExtension: DataExtension is deprecated since framework 5.3
+ * and removed in 6, while Extension carries every DataObject hook on both majors.
+ *
+ * @extends Extension<Member>
  */
-class MemberMFAAdminExtension extends DataExtension
+class MemberMFAAdminExtension extends Extension
 {
     public function updateCMSFields(FieldList $fields): void
     {
