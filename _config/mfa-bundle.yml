@@ -37,7 +37,9 @@ SilverStripe\MFA\Authenticator\LoginHandler:
 SilverStripe\MFA\BackupCode\RegisterHandler:
   user_help_link: '/mfa-help/backup-codes'
 
-# Enable MFA by default on first dev/build (can be disabled in Settings → Access)
+# Enable MFA by default on first dev/build (can be disabled in Settings -> Access)
+# With the default show_mfa_settings: false the fields are hidden and every dev/build enforces MFA;
+# only with show_mfa_settings: true can it be disabled in Settings -> Access (see README section 4).
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     - Restruct\MFABundle\Extensions\SiteConfigMFAExtension
