@@ -8,6 +8,7 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DB;
+use SilverStripe\SiteConfig\SiteConfig;
 
 /**
  * Forces MFA to be required by default and hides the SiteConfig fields.
@@ -48,6 +49,15 @@ class SiteConfigMFAExtension extends Extension
      */
     protected function enforceMFARequirement(): void
     {
+        # The hook fires from DataObject::requireDefaultRecords(), which SiteConfig calls as
+        # parent:: BEFORE it creates its own default record. On a fresh database there is no
+        # SiteConfig row yet, so the UPDATEs below would match nothing and MFA would stay off
+        # until the second dev/build. Create the row first; SiteConfig then finds it and skips.
+        if (!DB::query("SELECT COUNT(*) FROM SiteConfig")->value()) {
+            SiteConfig::make_site_config();
+            DB::alteration_message('Added default site config', 'created');
+        }
+
         // Always ensure MFA is enabled
         DB::query("UPDATE SiteConfig SET MFARequired = 1");
 
