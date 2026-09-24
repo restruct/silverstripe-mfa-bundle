@@ -11,6 +11,10 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
   `silverstripe/webauthn-authenticator` are now required at `^5 || ^6`, and
   `silverstripe/framework` at `^5.4 || ^6`. PHP 8.1 is the declared floor (Silverstripe 6 itself
   needs 8.3).
+- `silverstripe/admin` (`^2 || ^3`) and `silverstripe/siteconfig` (`^5.4 || ^6`) are now required
+  directly. The bundle uses both (`LeftAndMain.application_name` for the TOTP issuer, the
+  SiteConfig extension) but had them only through `silverstripe/mfa`. Nothing changes for an
+  install that already has them, which every install does.
 - A behavioural test suite (37 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
