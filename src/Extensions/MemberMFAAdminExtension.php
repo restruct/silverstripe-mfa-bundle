@@ -71,8 +71,13 @@ class MemberMFAAdminExtension extends Extension
         ));
 
         // Add after the main MFA field if it exists, otherwise at the end
-        if ($fields->fieldByName('Root.Main.RegisteredMFAMethodListField')) {
-            $fields->insertAfter('RegisteredMFAMethodListField', $gridField);
+        # The upstream field is a RegisteredMFAMethodListField NAMED 'MFASettings'
+        # (SilverStripe\MFA\Extension\MemberExtension::updateCMSFields); looking it up by its class
+        # name never matched, so the grid always fell through to the end of the tab.
+        // if ($fields->fieldByName('Root.Main.RegisteredMFAMethodListField')) {
+        //     $fields->insertAfter('RegisteredMFAMethodListField', $gridField);
+        if ($fields->fieldByName('Root.Main.MFASettings')) {
+            $fields->insertAfter('MFASettings', $gridField);
         } else {
             $fields->addFieldToTab('Root.Main', $gridField);
         }

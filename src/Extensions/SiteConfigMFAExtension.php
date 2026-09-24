@@ -6,6 +6,7 @@ namespace Restruct\MFABundle\Extensions;
 
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extension;
+use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DB;
 use SilverStripe\SiteConfig\SiteConfig;
@@ -80,10 +81,24 @@ class SiteConfigMFAExtension extends Extension
     {
         // Hide MFA settings unless config allows showing them
         if (!$this->config()->get('show_mfa_settings')) {
-            $fields->removeByName([
+            $names = [
                 'MFARequired',
                 'MFAGracePeriodExpires',
-            ]);
+            ];
+
+            # Upstream wraps both fields in an unnamed CompositeField whose title is the
+            # "Multi-factor authentication (MFA)" heading. Removing only the two fields left that
+            # heading behind over an empty group, so remove the group itself (and with it the fields).
+            $required = $fields->dataFieldByName('MFARequired');
+            $group = $required ? $required->getContainerFieldList()?->getContainerField() : null;
+            if ($group instanceof CompositeField) {
+                # An unnamed CompositeField derives its name from its children, so that name
+                # changes as they are removed. Pin one, and remove the group FIRST.
+                $group->setName('MFASettingsGroup');
+                array_unshift($names, 'MFASettingsGroup');
+            }
+
+            $fields->removeByName($names);
         }
     }
 }
