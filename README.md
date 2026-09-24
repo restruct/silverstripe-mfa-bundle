@@ -362,10 +362,11 @@ mirrored install contains no tests - add `silverstripe/recipe-testing`, map the
 
 ```bash
 # Silverstripe 5 (PHPUnit 9): the path first, then flush=1
-vendor/bin/phpunit vendor/restruct/silverstripe-mfa-bundle/tests flush=1
+vendor/bin/phpunit --fail-on-empty-test-suite vendor/restruct/silverstripe-mfa-bundle/tests flush=1
 
-# Silverstripe 6 (PHPUnit 11): flush=1 is ignored, use the environment variable
-SS_PHPUNIT_FLUSH=1 vendor/bin/phpunit vendor/restruct/silverstripe-mfa-bundle/tests
+# Silverstripe 6 (PHPUnit 11): a bare flush=1 is read as a test path, use the environment variable
+SS_PHPUNIT_FLUSH=1 vendor/bin/phpunit --fail-on-empty-test-suite \
+    vendor/restruct/silverstripe-mfa-bundle/tests
 ```
 
 `.github/workflows/ci.yml` builds exactly such a host for each supported major.

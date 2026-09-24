@@ -124,8 +124,9 @@ jobs:
           <!-- Warning-to-error escalation is the RUNNER's behaviour and differs by PHPUnit
                major: 9 (SS5) converts warnings by default, 11 (SS6) has no such attribute.
                failOnWarning is pinned so a warning behaves identically on every leg. -->
+          <!-- failOnEmptyTestSuite: a suite that silently finds no tests must fail, not pass. -->
           <phpunit bootstrap="vendor/silverstripe/framework/tests/bootstrap.php" colors="true"
-                   failOnWarning="true">
+                   failOnWarning="true" failOnEmptyTestSuite="true">
               <testsuites>
                   <testsuite name="mfa-bundle">
                       <directory>vendor/restruct/silverstripe-mfa-bundle/tests</directory>
@@ -166,14 +167,22 @@ jobs:
         working-directory: app-host
         env:
           # Flushing the test manifest differs per leg:
-          # - SS6 (PHPUnit 11) ignores a `flush=1` argument; SS_PHPUNIT_FLUSH flushes instead.
+          # - SS6 (PHPUnit 11) does NOT ignore a bare `flush=1` argument: it treats it as a test
+          #   path. SS_PHPUNIT_FLUSH flushes instead.
           # - SS5 (framework 5) does not read SS_PHPUNIT_FLUSH at all, and `flush=1` cannot be
-          #   combined with --testsuite. The SS5 legs are NOT flushed: they rely on the runner
-          #   being fresh, so no manifest cache exists yet.
+          #   combined with --testsuite. The SS5 legs therefore run each suite by PATH with a
+          #   trailing flush=1.
+          # --fail-on-empty-test-suite (PHPUnit 9.6 and 11) makes a run that finds no tests fail,
+          # so a wrong path or a broken autoload cannot pass as green.
           SS_PHPUNIT_FLUSH: 1
         run: |
-          vendor/bin/phpunit --testsuite mfa-bundle
-          vendor/bin/phpunit --testsuite consumer
+          if [ "${{ matrix.silverstripe }}" = "5" ]; then
+            vendor/bin/phpunit --fail-on-empty-test-suite vendor/restruct/silverstripe-mfa-bundle/tests flush=1
+            vendor/bin/phpunit --fail-on-empty-test-suite app/tests flush=1
+          else
+            vendor/bin/phpunit --fail-on-empty-test-suite --testsuite mfa-bundle
+            vendor/bin/phpunit --fail-on-empty-test-suite --testsuite consumer
+          fi
 
       - name: Boot the app and build the database
         # The suite proves the classes behave; this proves the module does not break a real boot.
