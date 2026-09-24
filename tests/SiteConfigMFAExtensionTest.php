@@ -4,8 +4,13 @@ namespace Restruct\MFABundle\Tests;
 
 use Restruct\MFABundle\Extensions\SiteConfigMFAExtension;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forms\CompositeField;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\Tab;
+use SilverStripe\Forms\TabSet;
+use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DB;
 use SilverStripe\SiteConfig\SiteConfig;
 
@@ -196,5 +201,62 @@ class SiteConfigMFAExtensionTest extends SapphireTest
             return stripos($title, 'Multi-factor authentication') !== false;
         });
         $this->assertCount(1, $mfaTitles);
+    }
+
+    /**
+     * Run only this extension's updateCMSFields() over a hand-built FieldList, so the shape of what
+     * upstream (or other code) put on the Access tab is under the test's control.
+     */
+    private function applyExtensionTo(FieldList $fields): FieldList
+    {
+        # Extension is not Injectable (no ::create()); go through the Injector instead.
+        $extension = Injector::inst()->create(SiteConfigMFAExtension::class);
+        $extension->setOwner(SiteConfig::current_site_config());
+        try {
+            $extension->updateCMSFields($fields);
+        } finally {
+            $extension->clearOwner();
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Regression: the whole MFA group was removed, so a field that other code had added to that
+     * group disappeared with it. Only the two MFA fields may go; the group stays while not empty.
+     */
+    public function testFieldOtherCodeAddedToTheMfaGroupIsKept()
+    {
+        $fields = $this->applyExtensionTo(FieldList::create(
+            TabSet::create('Root', Tab::create('Access', CompositeField::create(
+                TextField::create('MFARequired'),
+                TextField::create('MFAGracePeriodExpires'),
+                TextField::create('OtherCodesSentinel')
+            )->setTitle('Multi-factor authentication (MFA)')))
+        ));
+
+        $this->assertNull($fields->dataFieldByName('MFARequired'));
+        $this->assertNull($fields->dataFieldByName('MFAGracePeriodExpires'));
+        $this->assertNotNull($fields->dataFieldByName('OtherCodesSentinel'), 'the other field survives');
+    }
+
+    /**
+     * Regression guard: a Tab is a CompositeField too. If upstream put the two fields straight on
+     * the Access tab (no group), removing "the group" would remove the whole tab.
+     */
+    public function testAccessTabIsKeptWhenTheFieldsAreNotGrouped()
+    {
+        $fields = $this->applyExtensionTo(FieldList::create(
+            TabSet::create('Root', Tab::create(
+                'Access',
+                TextField::create('MFARequired'),
+                TextField::create('MFAGracePeriodExpires'),
+                TextField::create('OtherAccessSentinel')
+            ))
+        ));
+
+        $this->assertNull($fields->dataFieldByName('MFARequired'));
+        $this->assertNotNull($fields->findTab('Root.Access'), 'the Access tab survives');
+        $this->assertNotNull($fields->dataFieldByName('OtherAccessSentinel'));
     }
 }

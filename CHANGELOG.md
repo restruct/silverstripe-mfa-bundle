@@ -10,7 +10,7 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 - **Silverstripe 6 support.** `silverstripe/framework`, `silverstripe/mfa`,
   `silverstripe/totp-authenticator` and `silverstripe/webauthn-authenticator` are now required at
   `^5 || ^6`. PHP 8.1 is the declared floor (Silverstripe 6 itself needs 8.3).
-- A behavioural test suite (34 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
+- A behavioural test suite (36 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
 
@@ -20,7 +20,8 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 - **The SiteConfig MFA settings were not hidden.** The bundle's extension ran before the upstream
   MFA module added the fields, so it had nothing to remove and "Multi-factor authentication (MFA)"
   stayed on Settings → Access despite `show_mfa_settings: false`. The bundle's config now loads after
-  the upstream MFA extensions, and the whole group, heading included, is removed.
+  the upstream MFA extensions. The two fields are removed, then their group (with its heading)
+  if that left it empty; a field other code added to the group stays.
 - **The admin "Registered MFA Methods" grid was placed above the member's MFA settings**, instead
   of directly below them as intended: it ran before the upstream MFA module had added that field. The lookup also used the field's class name rather than its name (`MFASettings`);
   that is corrected too, though with the ordering fixed the grid lands in the same place either way,

@@ -8,6 +8,8 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Extension;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\Tab;
+use SilverStripe\Forms\TabSet;
 use SilverStripe\ORM\DB;
 use SilverStripe\SiteConfig\SiteConfig;
 
@@ -91,14 +93,30 @@ class SiteConfigMFAExtension extends Extension
             # heading behind over an empty group, so remove the group itself (and with it the fields).
             $required = $fields->dataFieldByName('MFARequired');
             $group = $required ? $required->getContainerFieldList()?->getContainerField() : null;
-            if ($group instanceof CompositeField) {
-                # An unnamed CompositeField derives its name from its children, so that name
-                # changes as they are removed. Pin one, and remove the group FIRST.
-                $group->setName('MFASettingsGroup');
-                array_unshift($names, 'MFASettingsGroup');
-            }
+            // if ($group instanceof CompositeField) {
+            //     # An unnamed CompositeField derives its name from its children, so that name
+            //     # changes as they are removed. Pin one, and remove the group FIRST.
+            //     $group->setName('MFASettingsGroup');
+            //     array_unshift($names, 'MFASettingsGroup');
+            // }
 
+            # Remove the two fields first, then the group only if that left it empty. Removing the
+            # group outright would also drop any field other code added to it, and a Tab is a
+            # CompositeField too: if upstream ever flattens the group, the container would be the
+            # Access tab itself, and removing it would take every other access setting with it.
             $fields->removeByName($names);
+
+            if (
+                $group instanceof CompositeField
+                && !$group instanceof Tab
+                && !$group instanceof TabSet
+                && $group->getChildren()->count() === 0
+            ) {
+                # An unnamed CompositeField derives its name from its children, which are gone now,
+                # so pin a name to remove it by.
+                $group->setName('MFASettingsGroup');
+                $fields->removeByName('MFASettingsGroup');
+            }
         }
     }
 }
