@@ -1,0 +1,15 @@
+SilverStripe\Security\Member:
+  withMethods:
+    FirstName: 'Has'
+    Surname: 'Methods'
+    Email: 'withmethods@example.com'
+  withoutMethods:
+    FirstName: 'No'
+    Surname: 'Methods'
+    Email: 'withoutmethods@example.com'
+
+SilverStripe\MFA\Model\RegisteredMethod:
+  totp:
+    MethodClassName: 'SilverStripe\TOTP\Method'
+    Data: '{}'
+    Member: =>SilverStripe\Security\Member.withMethods

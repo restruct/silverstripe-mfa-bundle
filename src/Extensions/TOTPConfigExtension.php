@@ -19,7 +19,7 @@ class TOTPConfigExtension extends Extension
 
     /**
      * Issuer name shown in authenticator apps (e.g., "My Company CMS")
-     * Fallback chain: explicit issuer config → SiteConfig::Title → LeftAndMain.application_name
+     * Fallback chain: explicit issuer config -> SiteConfig::Title -> LeftAndMain.application_name
      */
     private static ?string $issuer = null;
 

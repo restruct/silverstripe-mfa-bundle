@@ -1,6 +1,9 @@
 # Silverstripe MFA Bundle
 
-Portable MFA bundle for Silverstripe 5 with TOTP (Google Authenticator) and WebAuthn (security keys/biometrics) support.
+*Maintained by [Restruct](https://github.com/restruct). If this module saves you time, you can
+[support ongoing maintenance](https://github.com/sponsors/restruct).*
+
+Portable MFA bundle for Silverstripe 5 and 6 with TOTP (Google Authenticator) and WebAuthn (security keys/biometrics) support.
 
 ## Quick Start
 
@@ -19,9 +22,21 @@ That's it. MFA is enforced with a 6-month grace period out of the box.
 
 ## Requirements
 
-- Silverstripe ^5.0
-- PHP ^8.1
+- Silverstripe 5.4 or newer, or 6
+- PHP 8.1 or newer (Silverstripe 6 itself requires PHP 8.3)
 - `ext-bcmath` PHP extension (required by WebAuthn)
+
+## Version compatibility
+
+| Branch | Module version | Silverstripe | PHP |
+|--------|----------------|--------------|-----|
+| `main` | `1.5.x` | `^5.4 \|\| ^6` | `^8.1` |
+| (tags only) | `0.1` - `1.4.x` | `^5` | `^8.1` |
+
+`main` is the only maintained line: it supports every Silverstripe version this module targets, so
+there is no separate maintenance branch. Silverstripe 4 is not supported.
+
+**`composer.json` is the source of truth** for exact constraints; this table is a quick reference.
 
 ## Installation
 
@@ -85,7 +100,7 @@ SilverStripe\WebAuthn\RegisterHandler:
 
 ### 4. MFA requirement (enabled by default)
 
-This bundle automatically enables "MFA Required" on first `dev/build` and hides the SiteConfig MFA settings. Users will be prompted to set up MFA on their next login.
+This bundle enables "MFA Required" on every `dev/build`, including the very first one on an empty database, and hides the SiteConfig MFA settings (Settings > Access). Users will be prompted to set up MFA on their next login.
 
 A **grace period of 6 months** is set by default, allowing users to skip MFA setup temporarily. After the grace period expires, MFA becomes mandatory.
 
@@ -96,12 +111,20 @@ Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
   # grace_period_days: 0  # No grace period - MFA required immediately
 ```
 
-To show the MFA settings in SiteConfig (for manual control):
+To show the MFA settings in SiteConfig:
 
 ```yaml
 Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
   show_mfa_settings: true
 ```
+
+With the fields shown, "MFA Required" is the administrator's setting. `dev/build` switches it on
+only when it creates the SiteConfig record, which is the first build of a fresh database; after
+that, a build leaves it as it is, so an administrator who turns it off in Settings > Access keeps it
+off. Adding the bundle to an existing site with `show_mfa_settings: true` therefore does not turn
+MFA on: switch it on in Settings > Access. The grace period follows the same rule: `dev/build`
+fills in an empty grace-period date only on a fresh database, so a date the administrator cleared
+stays cleared. In either mode a grace-period date that is already set is never overwritten.
 
 ### 5. Disable during development (optional)
 
@@ -181,8 +204,8 @@ Override these if you use a custom URL segment or external help pages.
 
 Admins with the `MFA_ADMINISTER_REGISTERED_METHODS` permission can manage MFA for other users:
 
-1. Go to **Security → Users** and edit a user
-2. Find the **Registered MFA Methods** GridField (only shown for users with MFA configured)
+1. Go to **Security > Users** and edit a user
+2. Find the **Registered MFA Methods** GridField, directly below the user's MFA settings (only shown for users with MFA configured)
 3. Delete any MFA methods to force the user to re-register
 
 When all MFA methods are removed, the user will be prompted to set up MFA again on their next login.
@@ -244,9 +267,9 @@ Users can register multiple authenticators for redundancy.
 ### Recommendation
 
 This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum flexibility. Users can choose based on their needs:
-- Office workers with one machine → Touch ID
-- Mobile workers → Synced passkey or hardware key
-- High-security environments → Hardware keys only (`'cross-platform'`)
+- Office workers with one machine -> Touch ID
+- Mobile workers -> Synced passkey or hardware key
+- High-security environments -> Hardware keys only (`'cross-platform'`)
 
 ## Help Pages
 
@@ -328,6 +351,25 @@ SilverStripe\MFA\BackupCode\RegisterHandler:
 ```
 
 To disable help links entirely, set them to empty strings.
+
+## Running the tests
+
+The suite needs a booted Silverstripe project. Require the module into a Silverstripe 5 or 6 project
+through a **path repository with `"symlink": true`** - `/tests` is `export-ignore`, so a Packagist or
+mirrored install contains no tests - add `silverstripe/recipe-testing`, map the
+`Restruct\MFABundle\Tests\` namespace to `vendor/restruct/silverstripe-mfa-bundle/tests/` in
+`autoload-dev`, then flush the test manifest as the runner requires:
+
+```bash
+# Silverstripe 5 (PHPUnit 9): the path first, then flush=1
+vendor/bin/phpunit --fail-on-empty-test-suite vendor/restruct/silverstripe-mfa-bundle/tests flush=1
+
+# Silverstripe 6 (PHPUnit 11): a bare flush=1 is read as a test path, use the environment variable
+SS_PHPUNIT_FLUSH=1 vendor/bin/phpunit --fail-on-empty-test-suite \
+    vendor/restruct/silverstripe-mfa-bundle/tests
+```
+
+`.github/workflows/ci.yml` builds exactly such a host for each supported major.
 
 ## Further Reading
 

@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Restruct\MFABundle\Extensions;
 
 use SilverStripe\MFA\Model\RegisteredMethod;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * Adds summary fields for RegisteredMethod GridField display.
  *
- * @extends DataExtension<RegisteredMethod>
+ * Extends Extension rather than DataExtension: DataExtension is deprecated since framework 5.3
+ * and removed in 6, while Extension carries every DataObject hook on both majors.
+ *
+ * @extends Extension<RegisteredMethod>
  */
-class RegisteredMethodExtension extends DataExtension
+class RegisteredMethodExtension extends Extension
 {
     private static array $summary_fields = [
         'MethodName' => 'Method',
