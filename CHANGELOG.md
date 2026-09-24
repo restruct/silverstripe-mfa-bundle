@@ -7,9 +7,10 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 ### Added
 
-- **Silverstripe 6 support.** `silverstripe/framework`, `silverstripe/mfa`,
-  `silverstripe/totp-authenticator` and `silverstripe/webauthn-authenticator` are now required at
-  `^5 || ^6`. PHP 8.1 is the declared floor (Silverstripe 6 itself needs 8.3).
+- **Silverstripe 6 support.** `silverstripe/mfa`, `silverstripe/totp-authenticator` and
+  `silverstripe/webauthn-authenticator` are now required at `^5 || ^6`, and
+  `silverstripe/framework` at `^5.4 || ^6`. PHP 8.1 is the declared floor (Silverstripe 6 itself
+  needs 8.3).
 - A behavioural test suite (37 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
@@ -38,7 +39,11 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 ### Upgrading
 
-No code or config changes are needed. After updating, run `dev/build` once. On Silverstripe 5 you
+- **Silverstripe 5 before 5.4 is no longer supported.** The framework floor on the 5 side is now
+  `^5.4` (5.4 is the only Silverstripe 5 minor this release was tested on). A site on 5.0 to 5.3
+  stays on 1.4.x until it updates the framework.
+
+Otherwise no code or config changes are needed. After updating, run `dev/build` once. On Silverstripe 5 you
 will notice two visible differences, both the documented behaviour that was not happening before:
 the MFA fields are gone from Settings → Access (set `show_mfa_settings: true` to keep them), and the
 admin MFA grid on a member moves to sit below that member's MFA settings.

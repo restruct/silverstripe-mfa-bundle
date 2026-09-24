@@ -22,7 +22,7 @@ That's it. MFA is enforced with a 6-month grace period out of the box.
 
 ## Requirements
 
-- Silverstripe 5 or 6
+- Silverstripe 5.4 or newer, or 6
 - PHP 8.1 or newer (Silverstripe 6 itself requires PHP 8.3)
 - `ext-bcmath` PHP extension (required by WebAuthn)
 
@@ -30,7 +30,7 @@ That's it. MFA is enforced with a 6-month grace period out of the box.
 
 | Branch | Module version | Silverstripe | PHP |
 |--------|----------------|--------------|-----|
-| `main` | `1.5.x` | `^5 \|\| ^6` | `^8.1` |
+| `main` | `1.5.x` | `^5.4 \|\| ^6` | `^8.1` |
 | (tags only) | `0.1` - `1.4.x` | `^5` | `^8.1` |
 
 `main` is the only maintained line: it supports every Silverstripe version this module targets, so
