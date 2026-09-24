@@ -3,11 +3,13 @@
 namespace Restruct\MFABundle\Tests;
 
 use Restruct\MFABundle\Extensions\MemberMFAAdminExtension;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldAddNewButton;
 use SilverStripe\Forms\GridField\GridFieldDeleteAction;
 use SilverStripe\Forms\GridField\GridFieldEditButton;
+use SilverStripe\Forms\LiteralField;
 use SilverStripe\MFA\Model\RegisteredMethod;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
@@ -63,6 +65,44 @@ class MemberMFAAdminExtensionTest extends SapphireTest
         $upstream = array_search('MFASettings', $names, true);
         $this->assertNotFalse($upstream, 'the upstream MFA module adds its MFASettings field');
         $this->assertSame('AdminMFAMethods', $names[$upstream + 1] ?? null);
+    }
+
+    /**
+     * The test above cannot tell insertAfter('MFASettings') from appending to the tab, because the
+     * upstream MFASettings field is currently the last one on Root.Main. Put a sentinel field
+     * directly after it and re-run only this extension: the grid must land between the two.
+     */
+    public function testGridIsInsertedAfterMfaSettingsNotAppended()
+    {
+        $this->logInWithPermission('ADMIN');
+        $member = $this->objFromFixture(Member::class, 'withMethods');
+
+        # The real CMS fields (so MFASettings is the upstream field), minus the grid this extension
+        # already added, plus a sentinel directly after MFASettings.
+        $fields = $member->getCMSFields();
+        $fields->removeByName('AdminMFAMethods');
+        $fields->insertAfter('MFASettings', LiteralField::create('PlacementSentinel', ''));
+
+        # Extension is not Injectable (no ::create()); go through the Injector instead.
+        $extension = Injector::inst()->create(MemberMFAAdminExtension::class);
+        $extension->setOwner($member);
+        try {
+            $extension->updateCMSFields($fields);
+        } finally {
+            $extension->clearOwner();
+        }
+
+        $names = [];
+        foreach ($fields->findTab('Root.Main')->Fields() as $field) {
+            $names[] = $field->getName();
+        }
+
+        $upstream = array_search('MFASettings', $names, true);
+        $this->assertNotFalse($upstream, 'the upstream MFA module adds its MFASettings field');
+        $this->assertSame(
+            ['MFASettings', 'AdminMFAMethods', 'PlacementSentinel'],
+            array_slice($names, $upstream, 3)
+        );
     }
 
     public function testNoGridWithoutTheAdministerPermission()

@@ -10,7 +10,7 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 - **Silverstripe 6 support.** `silverstripe/framework`, `silverstripe/mfa`,
   `silverstripe/totp-authenticator` and `silverstripe/webauthn-authenticator` are now required at
   `^5 || ^6`. PHP 8.1 is the declared floor (Silverstripe 6 itself needs 8.3).
-- A behavioural test suite (36 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
+- A behavioural test suite (37 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
 
