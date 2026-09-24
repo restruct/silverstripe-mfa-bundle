@@ -49,6 +49,10 @@ class SiteConfigMFAExtension extends Extension
 
     /**
      * Force MFARequired on and set the grace period, on every dev/build.
+     *
+     * With show_mfa_settings: true the admin can switch MFARequired in Settings > Access, so it is
+     * forced on only by the build that creates the SiteConfig row (a fresh database); later builds
+     * leave the admin's choice alone. The grace period is handled the same way in both modes.
      */
     protected function enforceMFARequirement(): void
     {
@@ -56,13 +60,24 @@ class SiteConfigMFAExtension extends Extension
         # parent:: BEFORE it creates its own default record. On a fresh database there is no
         # SiteConfig row yet, so the UPDATEs below would match nothing and MFA would stay off
         # until the second dev/build. Create the row first; SiteConfig then finds it and skips.
+        $createdRecord = false;
         if (!DB::query("SELECT COUNT(*) FROM SiteConfig")->value()) {
             SiteConfig::make_site_config();
             DB::alteration_message('Added default site config', 'created');
+            $createdRecord = true;
         }
 
+        # With the fields hidden (the default) nobody can change MFARequired in the CMS, so forcing
+        # it on every build only restores the intended state. With show_mfa_settings: true it is
+        # the admin's setting: forcing it on every build would silently undo an admin's "optional"
+        # on the next deploy. Then only the build that just created the row (a fresh database)
+        # turns it on, as the starting value.
+        $enforce = $createdRecord || !$this->config()->get('show_mfa_settings');
+
         // Always ensure MFA is enabled
-        DB::query("UPDATE SiteConfig SET MFARequired = 1");
+        if ($enforce) {
+            DB::query("UPDATE SiteConfig SET MFARequired = 1");
+        }
 
         // Set grace period if not already set
         $record = DB::query("SELECT MFAGracePeriodExpires FROM SiteConfig LIMIT 1")->record();
@@ -76,7 +91,11 @@ class SiteConfigMFAExtension extends Extension
             }
         }
 
-        DB::alteration_message('MFA requirement enforced', 'changed');
+        if ($enforce) {
+            DB::alteration_message('MFA requirement enforced', 'changed');
+        } else {
+            DB::alteration_message('MFA requirement left as set in Settings > Access (show_mfa_settings: true)', 'notice');
+        }
     }
 
     public function updateCMSFields(FieldList $fields): void

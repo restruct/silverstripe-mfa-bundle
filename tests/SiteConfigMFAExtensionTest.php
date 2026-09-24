@@ -131,6 +131,46 @@ class SiteConfigMFAExtensionTest extends SapphireTest
         $this->assertSame('2030-01-01', $rows[0]['MFAGracePeriodExpires']);
     }
 
+    /**
+     * With show_mfa_settings: true the first build of a fresh database still switches MFA on:
+     * that is the starting value an admin can then change.
+     */
+    public function testShownSettingsFirstBuildOnFreshDatabaseEnforcesMfa()
+    {
+        Config::modify()->set(SiteConfigMFAExtension::class, 'show_mfa_settings', true);
+        DB::query('DELETE FROM "SiteConfig"');
+
+        $rows = $this->buildAndReadRows();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(1, (int) $rows[0]['MFARequired']);
+        $this->assertSame($this->expectedExpiry(180), $rows[0]['MFAGracePeriodExpires']);
+    }
+
+    /**
+     * Regression: with show_mfa_settings: true every dev/build forced MFARequired back to 1, so an
+     * admin's "optional" choice in Settings > Access silently reverted on the next deploy.
+     */
+    public function testShownSettingsAdminChoiceSurvivesTheNextBuild()
+    {
+        Config::modify()->set(SiteConfigMFAExtension::class, 'show_mfa_settings', true);
+        DB::query('DELETE FROM "SiteConfig"');
+
+        # First build on the fresh database: enforced.
+        $this->assertSame(1, (int) $this->buildAndReadRows()[0]['MFARequired']);
+
+        # The admin makes MFA optional in the CMS.
+        $config = SiteConfig::current_site_config();
+        $config->MFARequired = false;
+        $config->write();
+
+        # Second build (the next deploy): the admin's choice stays.
+        $rows = $this->buildAndReadRows();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(0, (int) $rows[0]['MFARequired']);
+    }
+
     // ---------------------------------------------------------------- CMS fields
 
     private function mfaFieldNames(): array

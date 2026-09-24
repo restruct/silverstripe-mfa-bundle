@@ -15,7 +15,7 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
   directly. The bundle uses both (`LeftAndMain.application_name` for the TOTP issuer, the
   SiteConfig extension) but had them only through `silverstripe/mfa`. Nothing changes for an
   install that already has them, which every install does.
-- A behavioural test suite (37 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
+- A behavioural test suite (39 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
 
@@ -34,6 +34,12 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 ### Changed
 
+- **With `show_mfa_settings: true`, `dev/build` no longer overrides the administrator's "MFA
+  Required" choice.** It switches MFA on only in the build that creates the SiteConfig record (a
+  fresh database). Before, every build forced it back on, so an administrator who made MFA optional
+  in Settings > Access found it required again after the next deploy. With the default
+  `show_mfa_settings: false` nothing changes: every build still enforces MFA.
+
 - `MemberMFAAdminExtension` and `RegisteredMethodExtension` extend `SilverStripe\Core\Extension`
   instead of `SilverStripe\ORM\DataExtension` (deprecated in framework 5.3, removed in 6). This only
   matters to code that checks `instanceof DataExtension` on them.
@@ -43,6 +49,9 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 ### Upgrading
 
+- **`show_mfa_settings: true` sites:** "MFA Required" now stays as the administrator set it across
+  builds. A site that relied on `dev/build` to switch it back on must set it in Settings > Access.
+  Adding the bundle to an existing site with this setting no longer switches MFA on either.
 - **Silverstripe 5 before 5.4 is no longer supported.** The framework floor on the 5 side is now
   `^5.4` (5.4 is the only Silverstripe 5 minor this release was tested on). A site on 5.0 to 5.3
   stays on 1.4.x until it updates the framework.

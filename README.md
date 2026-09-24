@@ -100,7 +100,7 @@ SilverStripe\WebAuthn\RegisterHandler:
 
 ### 4. MFA requirement (enabled by default)
 
-This bundle enables "MFA Required" on every `dev/build`, including the very first one on an empty database, and hides the SiteConfig MFA settings (Settings → Access). Users will be prompted to set up MFA on their next login.
+This bundle enables "MFA Required" on every `dev/build`, including the very first one on an empty database, and hides the SiteConfig MFA settings (Settings > Access). Users will be prompted to set up MFA on their next login.
 
 A **grace period of 6 months** is set by default, allowing users to skip MFA setup temporarily. After the grace period expires, MFA becomes mandatory.
 
@@ -118,9 +118,12 @@ Restruct\MFABundle\Extensions\SiteConfigMFAExtension:
   show_mfa_settings: true
 ```
 
-Note that this only shows the fields. `dev/build` still switches "MFA Required" back on, so an
-administrator who turns it off in Settings → Access will find it on again after the next build. A
-grace-period date that is already set is never overwritten.
+With the fields shown, "MFA Required" is the administrator's setting. `dev/build` switches it on
+only when it creates the SiteConfig record, which is the first build of a fresh database; after
+that, a build leaves it as it is, so an administrator who turns it off in Settings > Access keeps it
+off. Adding the bundle to an existing site with `show_mfa_settings: true` therefore does not turn
+MFA on: switch it on in Settings > Access. A grace-period date that is already set is never
+overwritten.
 
 ### 5. Disable during development (optional)
 
