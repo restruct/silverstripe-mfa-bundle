@@ -24,7 +24,7 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
   MFA only took effect on the second build. It now creates the row first.
 - **The SiteConfig MFA settings were not hidden.** The bundle's extension ran before the upstream
   MFA module added the fields, so it had nothing to remove and "Multi-factor authentication (MFA)"
-  stayed on Settings → Access despite `show_mfa_settings: false`. The bundle's config now loads after
+  stayed on Settings > Access despite `show_mfa_settings: false`. The bundle's config now loads after
   the upstream MFA extensions. The two fields are removed, then their group (with its heading)
   if that left it empty; a field other code added to the group stays.
 - **The admin "Registered MFA Methods" grid was placed above the member's MFA settings**, instead
@@ -49,6 +49,9 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 ### Upgrading
 
+1.5.0 is a minor release, so a site constrained to `~1.0`, `^1.3` or `^1.4` picks it up on its next
+`composer update`, together with the two visible CMS changes described below.
+
 - **`show_mfa_settings: true` sites:** "MFA Required" now stays as the administrator set it across
   builds. A site that relied on `dev/build` to switch it back on must set it in Settings > Access.
   Adding the bundle to an existing site with this setting no longer switches MFA on either.
@@ -58,7 +61,7 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 
 Otherwise no code or config changes are needed. After updating, run `dev/build` once. On Silverstripe 5 you
 will notice two visible differences, both the documented behaviour that was not happening before:
-the MFA fields are gone from Settings → Access (set `show_mfa_settings: true` to keep them), and the
+the MFA fields are gone from Settings > Access (set `show_mfa_settings: true` to keep them), and the
 admin MFA grid on a member moves to sit below that member's MFA settings.
 
 ## 1.4.0 and earlier

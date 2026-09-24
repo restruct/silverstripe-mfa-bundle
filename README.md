@@ -203,7 +203,7 @@ Override these if you use a custom URL segment or external help pages.
 
 Admins with the `MFA_ADMINISTER_REGISTERED_METHODS` permission can manage MFA for other users:
 
-1. Go to **Security → Users** and edit a user
+1. Go to **Security > Users** and edit a user
 2. Find the **Registered MFA Methods** GridField, directly below the user's MFA settings (only shown for users with MFA configured)
 3. Delete any MFA methods to force the user to re-register
 
@@ -266,9 +266,9 @@ Users can register multiple authenticators for redundancy.
 ### Recommendation
 
 This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum flexibility. Users can choose based on their needs:
-- Office workers with one machine → Touch ID
-- Mobile workers → Synced passkey or hardware key
-- High-security environments → Hardware keys only (`'cross-platform'`)
+- Office workers with one machine -> Touch ID
+- Mobile workers -> Synced passkey or hardware key
+- High-security environments -> Hardware keys only (`'cross-platform'`)
 
 ## Help Pages
 
