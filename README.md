@@ -122,8 +122,9 @@ With the fields shown, "MFA Required" is the administrator's setting. `dev/build
 only when it creates the SiteConfig record, which is the first build of a fresh database; after
 that, a build leaves it as it is, so an administrator who turns it off in Settings > Access keeps it
 off. Adding the bundle to an existing site with `show_mfa_settings: true` therefore does not turn
-MFA on: switch it on in Settings > Access. A grace-period date that is already set is never
-overwritten.
+MFA on: switch it on in Settings > Access. The grace period follows the same rule: `dev/build`
+fills in an empty grace-period date only on a fresh database, so a date the administrator cleared
+stays cleared. In either mode a grace-period date that is already set is never overwritten.
 
 ### 5. Disable during development (optional)
 

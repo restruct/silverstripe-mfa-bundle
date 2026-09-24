@@ -171,6 +171,46 @@ class SiteConfigMFAExtensionTest extends SapphireTest
         $this->assertSame(0, (int) $rows[0]['MFARequired']);
     }
 
+    /**
+     * Regression: with show_mfa_settings: true a grace date the admin had cleared (to make MFA
+     * mandatory at once) was filled in again by the next build, handing every user a new skip window.
+     */
+    public function testShownSettingsClearedGracePeriodSurvivesTheNextBuild()
+    {
+        Config::modify()->set(SiteConfigMFAExtension::class, 'show_mfa_settings', true);
+        DB::query('DELETE FROM "SiteConfig"');
+
+        # First build on the fresh database: the grace date is set as the starting value.
+        $this->assertSame($this->expectedExpiry(180), $this->buildAndReadRows()[0]['MFAGracePeriodExpires']);
+
+        # The admin clears the date in the CMS.
+        $config = SiteConfig::current_site_config();
+        $config->MFAGracePeriodExpires = null;
+        $config->write();
+
+        # Second build (the next deploy): the date stays cleared.
+        $rows = $this->buildAndReadRows();
+
+        $this->assertCount(1, $rows);
+        $this->assertEmpty($rows[0]['MFAGracePeriodExpires']);
+    }
+
+    /**
+     * Control for the test above: in the default mode (fields hidden) a missing grace date on an
+     * existing record is still filled in, as before.
+     */
+    public function testHiddenSettingsFillAMissingGracePeriodOnAnExistingRecord()
+    {
+        $config = SiteConfig::current_site_config();
+        $config->MFAGracePeriodExpires = null;
+        $config->write();
+
+        $rows = $this->buildAndReadRows();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($this->expectedExpiry(180), $rows[0]['MFAGracePeriodExpires']);
+    }
+
     // ---------------------------------------------------------------- CMS fields
 
     private function mfaFieldNames(): array

@@ -52,7 +52,8 @@ class SiteConfigMFAExtension extends Extension
      *
      * With show_mfa_settings: true the admin can switch MFARequired in Settings > Access, so it is
      * forced on only by the build that creates the SiteConfig row (a fresh database); later builds
-     * leave the admin's choice alone. The grace period is handled the same way in both modes.
+     * leave the admin's choice alone. The grace period follows the same rule: an empty date is
+     * filled in only when MFARequired is enforced, so an admin who clears it keeps it cleared.
      */
     protected function enforceMFARequirement(): void
     {
@@ -80,9 +81,14 @@ class SiteConfigMFAExtension extends Extension
         }
 
         // Set grace period if not already set
-        $record = DB::query("SELECT MFAGracePeriodExpires FROM SiteConfig LIMIT 1")->record();
+        # Only under the same $enforce gate as MFARequired. With show_mfa_settings: true the grace
+        # date is the admin's setting too: clearing it makes MFA mandatory at once, and refilling
+        # it on every build would silently hand every user a new skip window on the next deploy.
+        $record = $enforce
+            ? DB::query("SELECT MFAGracePeriodExpires FROM SiteConfig LIMIT 1")->record()
+            : null;
 
-        if (!$record || empty($record['MFAGracePeriodExpires'])) {
+        if ($enforce && (!$record || empty($record['MFAGracePeriodExpires']))) {
             $days = (int) $this->config()->get('grace_period_days');
             if ($days > 0) {
                 $expires = date('Y-m-d', strtotime("+{$days} days"));

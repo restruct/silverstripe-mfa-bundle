@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 (unreleased)
+## 1.5.0 (2026-09-25)
 
 Silverstripe 6 support, alongside Silverstripe 5, from the same `main` line. Three defects that
 affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on 5 too.
@@ -13,9 +13,9 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
   needs 8.3).
 - `silverstripe/admin` (`^2 || ^3`) and `silverstripe/siteconfig` (`^5.4 || ^6`) are now required
   directly. The bundle uses both (`LeftAndMain.application_name` for the TOTP issuer, the
-  SiteConfig extension) but had them only through `silverstripe/mfa`. Nothing changes for an
-  install that already has them, which every install does.
-- A behavioural test suite (39 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
+  SiteConfig extension) but had them only through `silverstripe/mfa`. Every install already has
+  both. A site that pins `silverstripe/siteconfig` below 5.4 will see it move to 5.4.
+- A behavioural test suite (41 tests) and a CI workflow that runs it on Silverstripe 5 and 6.
 
 ### Fixed
 
@@ -37,8 +37,11 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 - **With `show_mfa_settings: true`, `dev/build` no longer overrides the administrator's "MFA
   Required" choice.** It switches MFA on only in the build that creates the SiteConfig record (a
   fresh database). Before, every build forced it back on, so an administrator who made MFA optional
-  in Settings > Access found it required again after the next deploy. With the default
-  `show_mfa_settings: false` nothing changes: every build still enforces MFA.
+  in Settings > Access found it required again after the next deploy. The grace period follows
+  the same rule: in that mode a build fills in an empty "MFA grace period expires" date only on a
+  fresh database, so an administrator who clears it (to make MFA mandatory at once) no longer gets
+  a new 180-day skip window back on the next deploy. With the default `show_mfa_settings: false`
+  nothing changes: every build still enforces MFA and fills in a missing grace date.
 
 - `MemberMFAAdminExtension` and `RegisteredMethodExtension` extend `SilverStripe\Core\Extension`
   instead of `SilverStripe\ORM\DataExtension` (deprecated in framework 5.3, removed in 6). This only
@@ -53,16 +56,17 @@ affected Silverstripe 5 installs are fixed as well, so updating is worthwhile on
 `composer update`, together with the two visible CMS changes described below.
 
 - **`show_mfa_settings: true` sites:** "MFA Required" now stays as the administrator set it across
-  builds. A site that relied on `dev/build` to switch it back on must set it in Settings > Access.
-  Adding the bundle to an existing site with this setting no longer switches MFA on either.
+  builds, and so does a cleared grace-period date. A site that relied on `dev/build` to switch MFA
+  back on, or to set the grace date, must set it in Settings > Access. Adding the bundle to an
+  existing site with this setting no longer switches MFA on or sets a grace date either.
 - **Silverstripe 5 before 5.4 is no longer supported.** The framework floor on the 5 side is now
   `^5.4` (5.4 is the only Silverstripe 5 minor this release was tested on). A site on 5.0 to 5.3
   stays on 1.4.x until it updates the framework.
 
-Otherwise no code or config changes are needed. After updating, run `dev/build` once. On Silverstripe 5 you
-will notice two visible differences, both the documented behaviour that was not happening before:
-the MFA fields are gone from Settings > Access (set `show_mfa_settings: true` to keep them), and the
-admin MFA grid on a member moves to sit below that member's MFA settings.
+Otherwise no code or config changes are needed. After updating, run `dev/build` once. On
+Silverstripe 5 you will notice two visible differences, both the documented behaviour that was
+not happening before: the MFA fields are gone from Settings > Access (set `show_mfa_settings: true`
+to keep them), and the admin MFA grid on a member moves to sit below that member's MFA settings.
 
 ## 1.4.0 and earlier
 
