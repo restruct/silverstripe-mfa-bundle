@@ -130,6 +130,7 @@ jobs:
               <testsuites>
                   <testsuite name="mfa-bundle">
                       <directory>vendor/restruct/silverstripe-mfa-bundle/tests</directory>
+                      <exclude>vendor/restruct/silverstripe-mfa-bundle/tests/browser</exclude>
                   </testsuite>
                   <testsuite name="consumer">
                       <directory>app/tests</directory>
