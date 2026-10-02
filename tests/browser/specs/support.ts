@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { test as base, expect, type Browser, type Page } from '@playwright/test';
 
 // Shared fixtures and helpers for the mfa-bundle specs.
@@ -42,16 +43,21 @@ export { expect };
 /**
  * A page in a fresh, logged-out browser context, with its own console guard (the test's `page`
  * fixture carries the admin session; this one is a different visitor). Returns the page and a
- * check to call at the end.
+ * check to call at the end. `expected` lists console errors the spec provokes itself.
  */
-export async function freshVisitor(browser: Browser, baseURL: string | undefined): Promise<{ page: Page; done: () => Promise<void> }> {
+export async function freshVisitor(
+    browser: Browser,
+    baseURL: string | undefined,
+    // Console errors this spec causes on purpose (e.g. the 401 of a deliberately wrong code).
+    expected: RegExp[] = [],
+): Promise<{ page: Page; done: () => Promise<void> }> {
     // An explicit empty storageState: a context created in a spec otherwise picks up the
     // project's saved admin login.
     const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
     const errors: string[] = [];
-    page.on('console', (m) => m.type() === 'error' && errors.push(`console.error: ${m.text()}`));
-    page.on('pageerror', (e) => errors.push(`uncaught: ${e.message}`));
+    page.on('console', (m) => m.type() === 'error' && !expected.some((re) => re.test(m.text())) && errors.push(`console.error: ${m.text()}`));
+    page.on('pageerror', (e) => isKnownUpstreamError(e) || errors.push(`uncaught: ${e.message}`));
     return {
         page,
         done: async () => {
@@ -59,6 +65,22 @@ export async function freshVisitor(browser: Browser, baseURL: string | undefined
             await context.close();
         },
     };
+}
+
+/**
+ * The one uncaught error that is not counted, and only where it comes from: silverstripe/mfa's own
+ * recovery-codes screen (client/dist/js/bundle.js, BackupCodes register component). When "Finish"
+ * stores the codes it re-renders once with the codes already gone, and getFormattedCodes() calls
+ * .map() on undefined. The flow carries on to "Multi-factor authentication is now set up"
+ * regardless. Upstream code, seen on Silverstripe 5 and 6 (mfa 5 and 6, 2026-10-02); any other
+ * uncaught error still fails the spec.
+ */
+export function isKnownUpstreamError(err: Error): boolean {
+    return (
+        err.message === "Cannot read properties of undefined (reading 'map')" &&
+        /\bgetFormattedCodes\b/.test(err.stack ?? '') &&
+        /\/silverstripe\/mfa\/client\/dist\/js\/bundle\.js/.test(err.stack ?? '')
+    );
 }
 
 /** Log in through the real form with email and password (stops wherever the login lands). */
@@ -85,4 +107,38 @@ export async function ensureSudoMode(page: Page): Promise<void> {
     await page.locator('input#SudoModePassword').fill('admin');
     await page.locator('.sudo-mode-password-field__verify-button').click();
     await expect(page.locator('.sudo-mode-password-field')).toHaveCount(0);
+}
+
+/**
+ * The current TOTP code (RFC 6238: HMAC-SHA1, 30-second steps, 6 digits - totp-authenticator's
+ * defaults) for a base32 secret as the registration screen shows it (spaces allowed). `offset`
+ * shifts by whole steps; `period` is the step length in seconds.
+ */
+export function totp(secret: string, offset = 0, now = Date.now(), period = 30): string {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = '';
+    for (const c of secret.replace(/[\s=]/g, '').toUpperCase()) {
+        const v = alphabet.indexOf(c);
+        if (v < 0) throw new Error(`not base32: ${c}`);
+        bits += v.toString(2).padStart(5, '0');
+    }
+    const key = Buffer.from((bits.match(/.{8}/g) ?? []).map((b) => parseInt(b, 2)));
+    const counter = Buffer.alloc(8);
+    counter.writeBigUInt64BE(BigInt(Math.floor(now / 1000 / period) + offset));
+    const hmac = createHmac('sha1', key).update(counter).digest();
+    const o = hmac[hmac.length - 1] & 0xf;
+    const code = (hmac.readUInt32BE(o) & 0x7fffffff) % 1_000_000;
+    return String(code).padStart(6, '0');
+}
+
+/**
+ * A TOTP code that stays valid for at least 5 more seconds: waits for the next 30-second step
+ * when the current one is about to end, so a code is never typed in one step and checked in the next.
+ */
+export async function freshTotp(secret: string): Promise<string> {
+    const left = 30_000 - (Date.now() % 30_000);
+    if (left < 5_000) {
+        await new Promise((resolve) => setTimeout(resolve, left + 250));
+    }
+    return totp(secret);
 }

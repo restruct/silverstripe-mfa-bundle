@@ -17,3 +17,7 @@ SS6_RECIPE="^6"
 SS6_PHP="8.3"
 SS6_PORT="8892"
 SS6_SRC_REF=""
+
+# TOTP needs SS_MFA_SECRET_KEY to encrypt the secret it stores. A fixed TEST value for the scratch
+# hosts and CI only (the same one ci.yml uses for the unit tests).
+BROWSER_ENV="SS_MFA_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
