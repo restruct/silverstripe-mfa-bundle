@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0 (2026-10-06)
+
+### Added
+
+- **Opt-in `SingleCheckLoginHandler`** (#4). `silverstripe/mfa` checks the password twice on a
+  login submit that does not continue to MFA (a wrong password, or a member without MFA), so each
+  try records two `LoginAttempt`s and an account locks after 5 wrong passwords instead of 10
+  (upstream silverstripe/silverstripe-mfa#421). The new handler checks once. Off by default; enable
+  it with an Injector replacement, see README section 6.
+
 ## 1.5.0 (2026-09-25)
 
 Silverstripe 6 support, alongside Silverstripe 5, from the same `main` line. Three defects that

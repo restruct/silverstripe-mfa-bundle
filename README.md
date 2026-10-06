@@ -134,6 +134,29 @@ Add to `.env`:
 BYPASS_MFA=1
 ```
 
+### 6. Count each login attempt once (optional, opt-in)
+
+`silverstripe/mfa` checks the password twice on every login form submit that does not continue to
+the MFA step: a wrong password, or a member who does not need MFA. Each check records a
+`LoginAttempt`. So one wrong password counts as two failed attempts, and an account locks after 5
+wrong passwords instead of the 10 set in `Member.lock_out_after_incorrect_logins`. A valid login
+without MFA is also recorded twice. Upstream issue:
+[silverstripe/silverstripe-mfa#421](https://github.com/silverstripe/silverstripe-mfa/issues/421).
+
+This bundle ships a login handler that checks once per submit. It is off by default. Enable it in
+your project's YAML:
+
+```yaml
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\MFA\Authenticator\LoginHandler:
+    class: Restruct\MFABundle\Authenticator\SingleCheckLoginHandler
+```
+
+The handler only keeps the result of the first check and gives it to the second. The rest of the
+login runs through the MFA and framework code unchanged, with the same extension hooks. Once you
+enable it, the lockout follows `lock_out_after_incorrect_logins` again. If you doubled that value to
+compensate, set it back.
+
 ## Configuration Reference
 
 ### Bundle settings
