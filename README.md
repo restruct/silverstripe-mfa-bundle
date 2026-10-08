@@ -82,6 +82,18 @@ SilverStripe\TOTP\RegisterHandler:
   user_help_link: 'https://example.com/mfa-help'  # Help link during setup
 ```
 
+`period` and `algorithm` apply to new registrations: they go into the QR code, the code is checked
+with them, and they are stored with the registration. A login is always checked with the settings
+the member registered with, so changing them later does not lock anyone out; members who should
+move to the new settings register their app again. Registrations made before this fix keep 30 s /
+SHA1, which is what they were checked with. Not every authenticator app honours a non-default
+period or algorithm; one that ignores them cannot register.
+
+To do this the bundle replaces `SilverStripe\TOTP\RegisterHandler` and `VerifyHandler` with
+subclasses through the Injector (upstream has no hook where the code is checked). A project that
+replaces those handlers itself should extend `Restruct\MFABundle\TOTP\RegisterHandler` /
+`VerifyHandler` instead.
+
 #### Environment label on the issuer
 
 So a token registered on a dev or test site is not mistaken for the live one, the bundle adds the

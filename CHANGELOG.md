@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **`TOTPConfigExtension.period` and `.algorithm` now apply to checking the code, not only to the
+  QR code** (#3). With either set to a non-default value, registering an authenticator app always
+  failed: the app followed the QR code, the server checked with 30 s / SHA1. The TOTP handlers are
+  now replaced through the Injector by `Restruct\MFABundle\TOTP\RegisterHandler` and
+  `VerifyHandler`, which check with the configured settings at registration and store them with the
+  registration; a login is checked with the stored settings. Registrations made before this fix
+  have none stored and keep 30 s / SHA1, so no existing member is locked out. A project that
+  replaces `SilverStripe\TOTP\RegisterHandler` or `VerifyHandler` itself must now extend the
+  bundle's classes instead (README section 2).
+
 ## 1.7.0 (2026-10-10)
 
 ### Added

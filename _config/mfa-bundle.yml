@@ -20,6 +20,16 @@ SilverStripe\TOTP\RegisterHandler:
   extensions:
     - Restruct\MFABundle\Extensions\TOTPConfigExtension
 
+# Check the TOTP code with the configured period/algorithm, not only build the QR code with it
+# (issue #3). Upstream's TOTPAware::getTotp() has no hook, so the two handlers are replaced by
+# subclasses that override only that protected method; SilverStripe\TOTP\Method creates its
+# handlers through the Injector, so this reaches every registration and login.
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\TOTP\RegisterHandler:
+    class: Restruct\MFABundle\TOTP\RegisterHandler
+  SilverStripe\TOTP\VerifyHandler:
+    class: Restruct\MFABundle\TOTP\VerifyHandler
+
 # WebAuthn: Allow both platform authenticators (Touch ID, Windows Hello)
 # and cross-platform authenticators (USB security keys)
 # Default is 'cross-platform' only, which excludes biometrics

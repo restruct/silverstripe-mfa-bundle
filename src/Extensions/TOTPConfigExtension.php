@@ -77,6 +77,23 @@ class TOTPConfigExtension extends Extension
     private const AUTO_LABEL_ENVIRONMENTS = ['dev', 'test'];
 
     /**
+     * The configured period in seconds, for the QR code and for checking the code at registration
+     * (Restruct\MFABundle\TOTP\RegisterHandler). Unset or 0 means the library default.
+     */
+    public static function getConfiguredPeriod(): int
+    {
+        return (int) static::config()->get('period') ?: 30;
+    }
+
+    /**
+     * The configured hash algorithm (sha1, sha256, sha512); unset means the library default.
+     */
+    public static function getConfiguredDigest(): string
+    {
+        return (string) static::config()->get('algorithm') ?: 'sha1';
+    }
+
+    /**
      * Called during TOTP registration to customize the TOTP object
      */
     public function updateTotp(TOTP $totp, ?Member $member): void
