@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Environment label on the TOTP issuer.** Tokens registered outside live now show the
+  environment in authenticator apps, e.g. `My Site (DEV)` or `My Site (TEST)`, so they are not
+  mistaken for the live token. New `TOTPConfigExtension` config: `environment_label` (null =
+  automatic, a string = always, also on live, false = never) and `environment_label_format`
+  (default `'%s (%s)'`). The `SS_MFA_TOTP_ENVIRONMENT_LABEL` environment variable overrides the
+  config; empty switches the label off. Colons are stripped so a label can never make registration
+  fail. Existing tokens keep the issuer they were registered with. **Behaviour change on dev and
+  test sites:** newly registered tokens get the label by default; set `environment_label: false` to
+  keep the old issuer.
+
 ## 1.6.0 (2026-10-06)
 
 ### Added
