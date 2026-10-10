@@ -97,7 +97,8 @@ environment to the issuer (the title most authenticator apps show): `My Site (DE
 - `SS_MFA_TOTP_ENVIRONMENT_LABEL` in `.env` wins over the config when it is set. Set it to a string
   to use that label. Leave it empty (`SS_MFA_TOTP_ENVIRONMENT_LABEL=` or
   `SS_MFA_TOTP_ENVIRONMENT_LABEL=""`) or set it to `false` to switch the label off. When the
-  variable is not there at all, the config applies.
+  variable is not there at all, the config applies. Use `false` to switch it off: the `.env` parser
+  reads `0`, `1` and `off` as text, so those become the label.
 - `environment_label_format` is a `sprintf()` format with the issuer as the first argument and the
   label as the second. The default is `'%s (%s)'`; `'[%2$s] %1$s'` gives `[DEV] My Site`. A format
   that cannot be rendered, or that leaves the label out (`'%s'`), falls back to the default.
