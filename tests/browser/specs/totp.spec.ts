@@ -25,8 +25,11 @@ test('register the authenticator app with a computed code, then log in with a TO
     const started = v.waitForResponse((r) => r.request().method() === 'GET' && /\/mfa\/register\/totp/.test(r.url()));
     await v.getByRole('button', { name: 'Next' }).click();
     // The provisioning URI behind the QR code: the bundle's issuer instead of the site title.
+    // The hosts run as SS_ENVIRONMENT_TYPE=dev, so the default environment_label (added in 1.7.0
+    // on purpose, CHANGELOG "Unreleased") appends " (DEV)" to it.
     const uri = new URL((await (await started).json()).uri);
-    expect(uri.searchParams.get('issuer'), `issuer in ${uri}`).toBe('Acme Browser CMS');
+    // expect(uri.searchParams.get('issuer'), `issuer in ${uri}`).toBe('Acme Browser CMS');
+    expect(uri.searchParams.get('issuer'), `issuer in ${uri}`).toBe('Acme Browser CMS (DEV)');
 
     // The QR code and, for typing in by hand, the same secret as base32 groups.
     const app = v.locator('#mfa-app');

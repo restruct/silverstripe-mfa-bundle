@@ -15,7 +15,7 @@ That's it. MFA is enforced with a 6-month grace period out of the box.
 ## Features
 
 - Bundles `silverstripe/mfa`, `silverstripe/totp-authenticator`, and `silverstripe/webauthn-authenticator`
-- Configurable TOTP settings (issuer name, period, algorithm)
+- Configurable TOTP settings (issuer name, period, algorithm, environment label)
 - WebAuthn configured to allow both biometrics (Touch ID) and security keys
 - Admin interface to reset/remove user MFA methods
 - Sensible defaults: requires at least 1 MFA method
@@ -70,6 +70,8 @@ Restruct\MFABundle\Extensions\TOTPConfigExtension:
   issuer: 'My Company CMS'      # Name shown in authenticator apps
   period: 30                     # Seconds per code (default: 30)
   algorithm: 'sha1'              # sha1, sha256, sha512 (default: sha1)
+  environment_label: ~           # null = automatic (see below), a string = always, false = never
+  environment_label_format: '%s (%s)'  # sprintf: issuer, label
 
 # Settings on SilverStripe's TOTP classes (set directly)
 SilverStripe\TOTP\Method:
@@ -79,6 +81,42 @@ SilverStripe\TOTP\RegisterHandler:
   secret_length: 16              # Length of generated secret (default: 16)
   user_help_link: 'https://example.com/mfa-help'  # Help link during setup
 ```
+
+#### Environment label on the issuer
+
+So a token registered on a dev or test site is not mistaken for the live one, the bundle adds the
+environment to the issuer (the title most authenticator apps show): `My Site (DEV)`,
+`My Site (TEST)`. On live, and on any other environment type, nothing is added.
+
+- `environment_label: ~` (default): automatic. Environment type `dev` gives `DEV`, `test` gives
+  `TEST`. Anything else gets no label: `live`, and also an unexpected `SS_ENVIRONMENT_TYPE` value
+  such as `Live` or `staging` (use a string label for those).
+- `environment_label: 'STAGING'`: always use this string, whatever the environment type, live
+  included (e.g. a staging site that runs as `live`).
+- `environment_label: false`: never add a label.
+- `SS_MFA_TOTP_ENVIRONMENT_LABEL` in `.env` wins over the config when it is set. Set it to a string
+  to use that label. Leave it empty (`SS_MFA_TOTP_ENVIRONMENT_LABEL=` or
+  `SS_MFA_TOTP_ENVIRONMENT_LABEL=""`) or set it to `false` to switch the label off. When the
+  variable is not there at all, the config applies. Use `false` to switch it off: the `.env` parser
+  reads `0`, `1` and `off` as text, so those become the label.
+- `environment_label_format` is a `sprintf()` format with the issuer as the first argument and the
+  label as the second. The default is `'%s (%s)'`; `'[%2$s] %1$s'` gives `[DEV] My Site`. A format
+  that cannot be rendered, or that leaves the label out (`'%s'`), falls back to the default.
+
+The label is added after the issuer is resolved (`issuer` config, then the SiteConfig title, then
+`LeftAndMain.application_name`). If the issuer already carries the label (`issuer: 'My Site (DEV)'`,
+or `'[DEV] My Site'` with a prefix format) it is not added a second time. Colons are
+removed from the label and the result, because the issuer is written into the otpauth URI as
+`issuer:account` and a colon would make registration fail.
+
+Two things to know:
+
+- **The label is baked into the token when it is registered.** The authenticator app stores the
+  issuer it was given, so changing the config later does not rename existing tokens. To change the
+  label on a token, remove it in the app and register the authenticator again.
+- **A live database copied to a test site carries live's tokens, without the label.** They are the
+  same secrets, so the codes keep working on the test site; the app simply shows them under the
+  live name. Members who register again on the test site get a separate, labelled token.
 
 ### 3. Configure WebAuthn settings (optional)
 
@@ -168,6 +206,8 @@ compensate, set it back.
 | `TOTPConfigExtension` | `issuer` | SiteConfig Title | App name shown in authenticator |
 | `TOTPConfigExtension` | `period` | 30 | Seconds per code |
 | `TOTPConfigExtension` | `algorithm` | sha1 | Hash algorithm (sha1/sha256/sha512) |
+| `TOTPConfigExtension` | `environment_label` | null (automatic) | Label added to the issuer: null = `DEV`/`TEST` on dev/test only, string = always, false = never. Overridden by `SS_MFA_TOTP_ENVIRONMENT_LABEL` (empty or `false` = off) |
+| `TOTPConfigExtension` | `environment_label_format` | `'%s (%s)'` | `sprintf()` format: issuer, label |
 
 ### SilverStripe TOTP settings (set directly on SS classes)
 
@@ -210,7 +250,7 @@ Override these if you use a custom URL segment or external help pages.
 
 ### TOTP (Authenticator App)
 1. A secret is generated and encrypted with `SS_MFA_SECRET_KEY`
-2. The QR code shows your configured issuer name
+2. The QR code shows your configured issuer name, with the environment label on dev and test sites (e.g. `My Site (DEV)`)
 3. User scans with Google Authenticator, Authy, 1Password, etc.
 4. On login, user enters the 6-digit code from their app
 
