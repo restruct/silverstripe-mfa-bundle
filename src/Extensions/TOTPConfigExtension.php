@@ -40,13 +40,13 @@ class TOTPConfigExtension extends Extension
      * Environment label added to the issuer, so a token registered on a dev or test site can be
      * told apart from the live one in an authenticator app (the issuer is the title most apps show).
      *
-     * - null (default): automatic. Outside 'live' the upper-cased environment type is used
-     *   ('DEV', 'TEST'); on live no label is added.
+     * - null (default): automatic. Environment type 'dev' gives 'DEV', 'test' gives 'TEST'. Any
+     *   other value ('live', or an unexpected SS_ENVIRONMENT_TYPE such as 'Live') gets no label.
      * - a string: always use this label, also on live (e.g. 'STAGING').
      * - false: never add a label.
      *
      * The SS_MFA_TOTP_ENVIRONMENT_LABEL environment variable, when set, wins over this setting;
-     * set to an empty string it disables the label.
+     * set but empty (`VAR=`, `VAR=""`) or `VAR=false` it disables the label.
      *
      * The label is baked into the token when it is registered: changing it later does not rename
      * tokens that already exist.
@@ -68,6 +68,13 @@ class TOTPConfigExtension extends Extension
      * Format used when the configured one cannot be applied (throws, or yields an empty issuer).
      */
     private const DEFAULT_LABEL_FORMAT = '%s (%s)';
+
+    /**
+     * Environment types that get an automatic label. Compared strictly: Director returns the raw
+     * SS_ENVIRONMENT_TYPE value when the kernel has none set, so 'Live' or 'staging' can occur,
+     * and labelling those would put e.g. "(LIVE)" on production tokens.
+     */
+    private const AUTO_LABEL_ENVIRONMENTS = ['dev', 'test'];
 
     /**
      * Called during TOTP registration to customize the TOTP object
@@ -103,10 +110,15 @@ class TOTPConfigExtension extends Extension
     /**
      * The environment label to add to the issuer, or null for none.
      *
-     * The env var is checked with hasEnv() rather than a truthiness test on getEnv(): getEnv()
-     * returns false both for "never set" and for an explicit false, and '' for "set but empty",
-     * so only hasEnv() can tell an empty override (= disable) from an absent one (= use config).
-     * Identical on framework 5 and 6.
+     * The env var is checked with hasEnv() rather than a test on getEnv()'s return value: getEnv()
+     * returns false both for "never set" and for an explicit false, so only hasEnv() can tell an
+     * override that switches the label off from an absent one (= use config). Identical on
+     * framework 5 and 6.
+     *
+     * What an "off" override looks like depends on how it arrived. EnvironmentLoader parses .env
+     * with m1/env (2.2.0), which turns `VAR=` into null, `VAR=false` into bool false and `VAR=""`
+     * into '', and stores those with setEnv(); a real (server) environment variable set to empty
+     * arrives as ''. All of them mean "off", never "fall back to config".
      */
     public function getEnvironmentLabel(): ?string
     {
@@ -115,12 +127,13 @@ class TOTPConfigExtension extends Extension
 
         if (Environment::hasEnv(self::ENV_LABEL_VAR)) {
             $envValue = Environment::getEnv(self::ENV_LABEL_VAR);
-            # Only a string counts as an override. setEnv(name, null|false) is "set" for hasEnv()
-            # but carries no label, so treat it as absent and fall through to config.
-            if (is_string($envValue)) {
-                $label = $envValue;
-                $useConfig = false;
+            $useConfig = false;
+            # null / false / blank: the variable is set but switches the label off (see above).
+            if ($envValue === null || $envValue === false || trim((string) $envValue) === '') {
+                return null;
             }
+            # m1/env may also yield true or a number (`VAR=true`, `VAR=2`); use them as text.
+            $label = is_bool($envValue) ? ($envValue ? 'TRUE' : '') : (string) $envValue;
         }
 
         if ($useConfig) {
@@ -131,9 +144,9 @@ class TOTPConfigExtension extends Extension
             if (is_string($configured)) {
                 $label = $configured;
             } else {
-                # Automatic: label every environment except live.
+                # Automatic: only the known non-production types get a label.
                 $envType = (string) Director::get_environment_type();
-                $label = $envType !== 'live' ? strtoupper($envType) : null;
+                $label = in_array($envType, self::AUTO_LABEL_ENVIRONMENTS, true) ? strtoupper($envType) : null;
             }
         }
 
@@ -159,13 +172,18 @@ class TOTPConfigExtension extends Extension
         $issuer = (string) $totp->getIssuer();
         if ($issuer === '') {
             # No issuer at all: the label alone is still better than an anonymous token.
+            # Reachable only through the hook itself (and the tests): upstream RegisterHandler
+            # calls setIssuer(SiteConfig Title) before firing it, and an empty or null title
+            # already fails there. Kept so the hook is safe whatever calls it.
             $totp->setIssuer($label);
             return;
         }
 
         $format = (string) $this->config()->get('environment_label_format');
         $labelled = $this->formatIssuer($format, $issuer, $label);
-        if ($labelled === null) {
+        # A format that renders but leaves the label out ('%s', '%1$s') would silently disable the
+        # feature; treat it like a broken one.
+        if ($labelled === null || $labelled === '' || $labelled === $this->sanitiseIssuer($issuer)) {
             # A broken custom format must never break registration: fall back to the default.
             $format = self::DEFAULT_LABEL_FORMAT;
             $labelled = $this->formatIssuer($format, $issuer, $label);

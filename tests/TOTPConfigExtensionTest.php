@@ -8,6 +8,7 @@ use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
+use SilverStripe\Core\EnvironmentLoader;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Kernel;
 use SilverStripe\Dev\SapphireTest;
@@ -194,7 +195,8 @@ class TOTPConfigExtensionTest extends SapphireTest
     {
         $this->setEnvironmentType('dev');
         Config::modify()->set(TOTPConfigExtension::class, 'environment_label', 'STAGING');
-        # As a `SS_MFA_TOTP_ENVIRONMENT_LABEL=` line in .env arrives: set, but empty.
+        # As a real (server/shell) environment variable set to empty arrives. A .env line does NOT
+        # arrive like this: m1/env parses `VAR=` to null, see testEmptyOrFalseDotEnvLineDisablesTheLabel.
         Environment::setEnv(TOTPConfigExtension::ENV_LABEL_VAR, '');
 
         $this->assertSame('Site Title', $this->runHook('Site Title')->getIssuer());
@@ -266,5 +268,90 @@ class TOTPConfigExtensionTest extends SapphireTest
         Config::modify()->set(TOTPConfigExtension::class, 'environment_label', ' : ');
 
         $this->assertSame('Site Title', $this->runHook('Site Title')->getIssuer());
+    }
+
+    /**
+     * Through the real .env loader, which is how the override is normally set. m1/env (2.2.0)
+     * parses `VAR=` to null, `VAR=false` to bool false and `VAR=""` to ''; all three must switch
+     * the label off rather than fall back to config.
+     */
+    public function testEmptyOrFalseDotEnvLineDisablesTheLabel()
+    {
+        $this->setEnvironmentType('dev');
+        Config::modify()->set(TOTPConfigExtension::class, 'environment_label', 'STAGING');
+        $var = TOTPConfigExtension::ENV_LABEL_VAR;
+        $cleanEnv = Environment::getVariables()['env'];
+
+        foreach (["$var=", "$var=\"\"", "$var=false"] as $line) {
+            Environment::setVariables(['env' => $cleanEnv]);
+            $this->assertFalse(Environment::hasEnv($var), "precondition for `$line`: var unset");
+
+            $file = tempnam(sys_get_temp_dir(), 'mfab-env');
+            try {
+                file_put_contents($file, $line . "\n");
+                (new EnvironmentLoader())->loadFile($file);
+            } finally {
+                unlink($file);
+            }
+
+            $this->assertTrue(Environment::hasEnv($var), "`$line` was loaded");
+            $this->assertSame('Site Title', $this->runHook('Site Title')->getIssuer(), "`$line` disables the label");
+        }
+        # tearDown() restores the environment as it was before the test.
+    }
+
+    public function testDotEnvLineWithAValueOverridesTheConfig()
+    {
+        $this->setEnvironmentType('live');
+        $var = TOTPConfigExtension::ENV_LABEL_VAR;
+        $file = tempnam(sys_get_temp_dir(), 'mfab-env');
+        try {
+            file_put_contents($file, "$var=\"ACCEPT\"\n");
+            (new EnvironmentLoader())->loadFile($file);
+        } finally {
+            unlink($file);
+        }
+
+        $this->assertSame('Site Title (ACCEPT)', $this->runHook('Site Title')->getIssuer());
+    }
+
+    public function testLabelIsNotPrependedTwice()
+    {
+        $this->setEnvironmentType('dev');
+        Config::modify()->set(TOTPConfigExtension::class, 'environment_label_format', '[%2$s] %1$s');
+        Config::modify()->set(TOTPConfigExtension::class, 'issuer', '[DEV] My Site');
+
+        $this->assertSame('[DEV] My Site', $this->runHook('Site Title')->getIssuer());
+    }
+
+    public function testFormatThatDropsTheLabelFallsBackToTheDefault()
+    {
+        $this->setEnvironmentType('dev');
+
+        foreach (['%s', '%1$s'] as $format) {
+            Config::modify()->set(TOTPConfigExtension::class, 'environment_label_format', $format);
+            $this->assertSame('Site Title (DEV)', $this->runHook('Site Title')->getIssuer(), "format '$format'");
+        }
+    }
+
+    public function testUnexpectedEnvironmentTypesGetNoAutomaticLabel()
+    {
+        # With no type set on the kernel, Director returns SS_ENVIRONMENT_TYPE as written.
+        $this->setEnvironmentType(null);
+
+        foreach (['Live', 'staging', 'DEV'] as $type) {
+            Environment::setEnv('SS_ENVIRONMENT_TYPE', $type);
+            $this->assertSame($type, Director::get_environment_type(), 'precondition');
+            $this->assertSame('Site Title', $this->runHook('Site Title')->getIssuer(), "type '$type'");
+        }
+    }
+
+    public function testConfiguredLabelStringAppliesWhateverTheEnvironmentType()
+    {
+        $this->setEnvironmentType(null);
+        Environment::setEnv('SS_ENVIRONMENT_TYPE', 'staging');
+        Config::modify()->set(TOTPConfigExtension::class, 'environment_label', 'STAGING');
+
+        $this->assertSame('Site Title (STAGING)', $this->runHook('Site Title')->getIssuer());
     }
 }
