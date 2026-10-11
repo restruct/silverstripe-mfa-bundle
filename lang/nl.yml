@@ -93,3 +93,5 @@ nl:
       ## Helemaal buitengesloten?
 
       Neem contact op met de beheerder. Zij kunnen je MFA-instellingen resetten zodat je opnieuw kunt instellen.
+  Restruct\MFABundle\TOTP\RegisterHandler:
+    SETTINGS_NOT_SUPPORTED: 'De authenticator-app kan op deze site nu niet worden geregistreerd. Neem contact op met een beheerder.'

@@ -3,6 +3,7 @@
 namespace Restruct\MFABundle\TOTP;
 
 use OTPHP\TOTPInterface;
+use Psr\Log\LoggerInterface;
 use Restruct\MFABundle\Extensions\TOTPConfigExtension;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Environment;
@@ -14,6 +15,7 @@ use SilverStripe\Security\Security;
 use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\TOTP\Method;
 use SilverStripe\TOTP\RegisterHandler as UpstreamRegisterHandler;
+use SilverStripe\TOTP\VerifyHandler as UpstreamVerifyHandler;
 
 /**
  * TOTP registration that checks the code with the configured period and algorithm.
@@ -108,6 +110,24 @@ class RegisterHandler extends UpstreamRegisterHandler
     }
 
     /**
+     * Whether the configured period or algorithm differs from the library defaults (30 s / SHA1).
+     */
+    protected function usesNonDefaultSettings(): bool
+    {
+        return TOTPConfigExtension::getConfiguredPeriod() !== 30
+            || strtolower(TOTPConfigExtension::getConfiguredDigest()) !== 'sha1';
+    }
+
+    /**
+     * Whether logins are checked by the bundle's VerifyHandler (or a subclass of it), created the
+     * way SilverStripe\TOTP\Method creates it: through the Injector under the upstream name.
+     */
+    protected function verifyHandlerReadsStoredSettings(): bool
+    {
+        return Injector::inst()->create(UpstreamVerifyHandler::class) instanceof VerifyHandler;
+    }
+
+    /**
      * Used for the QR code in start() AND for checking the code in register(), so both agree.
      */
     protected function getTotp(StoreInterface $store): TOTPInterface
@@ -124,6 +144,25 @@ class RegisterHandler extends UpstreamRegisterHandler
      */
     public function register(HTTPRequest $request, StoreInterface $store): Result
     {
+        # A non-default period/algorithm is only safe when logins are checked by the bundle's
+        # VerifyHandler, which reads them back from the registration. A project that replaced only
+        # SilverStripe\TOTP\VerifyHandler (with its own subclass of upstream) would check every
+        # login with 30 s / SHA1, so the member who registers now would be locked out at the next
+        # login. Refuse the registration instead, and tell the developer why.
+        if ($this->usesNonDefaultSettings() && !$this->verifyHandlerReadsStoredSettings()) {
+            Injector::inst()->get(LoggerInterface::class)->error(
+                'TOTP registration refused: TOTPConfigExtension sets a non-default period or algorithm, but '
+                . 'SilverStripe\TOTP\VerifyHandler is replaced by '
+                . get_class(Injector::inst()->create(UpstreamVerifyHandler::class))
+                . ', which does not extend ' . VerifyHandler::class
+                . '. Logins would be checked with 30 s / SHA1 and the member locked out.'
+            );
+            return Result::create(false, _t(
+                __CLASS__ . '.SETTINGS_NOT_SUPPORTED',
+                'The authenticator app cannot be registered on this site right now. Please contact an administrator.'
+            ));
+        }
+
         $result = parent::register($request, $store);
         if (!$result->isSuccessful()) {
             return $result;

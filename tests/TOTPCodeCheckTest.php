@@ -4,6 +4,7 @@ namespace Restruct\MFABundle\Tests;
 
 use OTPHP\TOTP;
 use Restruct\MFABundle\Extensions\TOTPConfigExtension;
+use Restruct\MFABundle\Tests\Stub\ForeignVerifyHandler;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
@@ -135,6 +136,32 @@ class TOTPCodeCheckTest extends SapphireTest
         $this->assertArrayHasKey('secret', $context, 'the encrypted secret is still stored');
         $this->assertSame(60, $context['period'] ?? null);
         $this->assertSame('sha256', $context['digest'] ?? null);
+    }
+
+    public function testRegistrationIsRefusedWhenOnlyTheVerifyHandlerIsReplaced()
+    {
+        # A project replaced only SilverStripe\TOTP\VerifyHandler, with a subclass of upstream:
+        # logins would be checked with 30 s / SHA1, so a 60-second registration would lock the
+        # member out at the next login. It must be refused rather than stored.
+        Injector::inst()->load([VerifyHandler::class => ['class' => ForeignVerifyHandler::class]]);
+        Config::modify()->set(TOTPConfigExtension::class, 'period', 60);
+        $handler = Injector::inst()->create(RegisterHandler::class);
+
+        $result = $handler->register($this->request($this->codeFor(60, 'sha1')), $this->registrationStore());
+
+        $this->assertFalse($result->isSuccessful(), 'a registration the login check cannot honour is refused');
+        $this->assertStringContainsString('contact an administrator', (string) $result->getMessage());
+    }
+
+    public function testAReplacedVerifyHandlerDoesNotAffectRegistrationWithDefaults()
+    {
+        # With 30 s / SHA1 every VerifyHandler checks the same way, so nothing is refused.
+        Injector::inst()->load([VerifyHandler::class => ['class' => ForeignVerifyHandler::class]]);
+        $handler = Injector::inst()->create(RegisterHandler::class);
+
+        $result = $handler->register($this->request($this->codeFor(30, 'sha1')), $this->registrationStore());
+
+        $this->assertTrue($result->isSuccessful());
     }
 
     public function testLoginChecksTheCodeWithThePeriodAndAlgorithmOfTheRegistration()

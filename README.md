@@ -85,14 +85,22 @@ SilverStripe\TOTP\RegisterHandler:
 `period` and `algorithm` apply to new registrations: they go into the QR code, the code is checked
 with them, and they are stored with the registration. A login is always checked with the settings
 the member registered with, so changing them later does not lock anyone out; members who should
-move to the new settings register their app again. Registrations made before this fix keep 30 s /
+move to the new settings register their app again. Registrations made before 1.8.0 keep 30 s /
 SHA1, which is what they were checked with. Not every authenticator app honours a non-default
 period or algorithm; one that ignores them cannot register.
 
 To do this the bundle replaces `SilverStripe\TOTP\RegisterHandler` and `VerifyHandler` with
 subclasses through the Injector (upstream has no hook where the code is checked). A project that
 replaces those handlers itself should extend `Restruct\MFABundle\TOTP\RegisterHandler` /
-`VerifyHandler` instead.
+`VerifyHandler` instead. Replace both or neither: a `VerifyHandler` that does not extend the
+bundle's checks every login with 30 s / SHA1 and would lock out members registered with other
+settings, so with a non-default period or algorithm the bundle then refuses the registration (the
+member is asked to contact an administrator, and an error is logged).
+
+**Rollback:** with a non-default `period` or `algorithm`, going back to 1.7.0 or earlier, or
+removing the bundle, locks out every member registered with those settings: logins are then checked
+with 30 s / SHA1 again. Those members have to register their app again (an administrator can reset
+their MFA).
 
 #### Issuer
 

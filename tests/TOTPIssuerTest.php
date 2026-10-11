@@ -142,6 +142,17 @@ class TOTPIssuerTest extends SapphireTest
         $this->assertSame('App Name', $app->getIssuer());
     }
 
+    public function testAWhitespaceOnlyTitleFallsBackToTheApplicationName()
+    {
+        # otphp would accept '   ' as an issuer, but an app would show a blank name.
+        $this->setSiteTitle('   ');
+
+        [, $app, $registered] = $this->registerApp();
+
+        $this->assertSame('App Name', $app->getIssuer());
+        $this->assertTrue($registered);
+    }
+
     public function testNoIssuerAtAllStillRegisters()
     {
         # Neither the title nor application_name gives an issuer: setIssuer() is skipped (the
