@@ -94,6 +94,16 @@ subclasses through the Injector (upstream has no hook where the code is checked)
 replaces those handlers itself should extend `Restruct\MFABundle\TOTP\RegisterHandler` /
 `VerifyHandler` instead.
 
+#### Issuer
+
+The issuer (the name most authenticator apps show) is the `issuer` config, else the SiteConfig
+title, else `LeftAndMain.application_name`. Colons (`:` and `%3A`) are removed from each of them,
+because the issuer is written into the otpauth URI as `issuer:account` and the TOTP library refuses
+a colon. Without this, upstream `silverstripe/totp-authenticator` fails the registration with a 500
+when the site title is empty or contains a colon (upstream issues #64 and #106): the bundle's
+`RegisterHandler` builds the issuer safely in those two cases and leaves every other registration
+to upstream unchanged. If no issuer is left at all, the token is registered without one.
+
 #### Environment label on the issuer
 
 So a token registered on a dev or test site is not mistaken for the live one, the bundle adds the

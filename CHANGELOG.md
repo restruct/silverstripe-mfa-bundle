@@ -13,6 +13,15 @@
   have none stored and keep 30 s / SHA1, so no existing member is locked out. A project that
   replaces `SilverStripe\TOTP\RegisterHandler` or `VerifyHandler` itself must now extend the
   bundle's classes instead (README section 2).
+- **TOTP registration no longer fails on an empty site title or one with a colon** (upstream
+  silverstripe/silverstripe-totp-authenticator#106 and #64). Upstream passes the SiteConfig title to
+  the TOTP issuer before any extension hook runs: an empty title gave a `TypeError` (or "Issuer must
+  not be empty" on spomky-labs/otphp 11.5) and a title such as `Foo: Bar` gave "Issuer must not
+  contain a colon", both a 500 when a member set up an authenticator app. For those titles the
+  bundle's `RegisterHandler` now strips colons (`:`, `%3A`) and lets an empty issuer fall back to
+  `LeftAndMain.application_name`, or registers without an issuer when nothing is left; a valid title
+  still goes through upstream unchanged. The `issuer` config and `application_name` are stripped of
+  colons too. The environment label from 1.7.0 applies as before (README section 2, "Issuer").
 
 ## 1.7.0 (2026-10-10)
 
