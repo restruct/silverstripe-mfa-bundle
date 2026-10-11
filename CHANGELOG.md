@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.8.0 (2026-10-11)
+
+### Fixed
+
+- **`TOTPConfigExtension.period` and `.algorithm` now apply to checking the code, not only to the
+  QR code** (#3). With either set to a non-default value, an authenticator app that follows the
+  period and algorithm in the QR code could never register: the server checked with 30 s / SHA1.
+  Apps that ignore those settings (and make 30 s / SHA1 codes anyway) did register on 1.7.0 and
+  earlier; on this release they cannot, because the code is now checked with the configured
+  settings. Those members keep their existing registration. The TOTP handlers are
+  now replaced through the Injector by `Restruct\MFABundle\TOTP\RegisterHandler` and
+  `VerifyHandler`, which check with the configured settings at registration and store them with the
+  registration; a login is checked with the stored settings. Registrations made before this release
+  have none stored and keep 30 s / SHA1, so no existing member is locked out. A project that
+  replaces `SilverStripe\TOTP\RegisterHandler` or `VerifyHandler` itself must now extend the
+  bundle's classes instead (README section 2). Replacing only the `VerifyHandler` with a class that
+  does not extend the bundle's would check logins with 30 s / SHA1 and lock out members registered
+  with other settings, so with a non-default period or algorithm such a registration is now refused
+  with a message to contact an administrator, and an error is logged. **Rollback:** going back to
+  1.7.0 or earlier, or removing the bundle, locks out every member registered with a non-default
+  period or algorithm (they must register their app again).
+- **TOTP registration no longer fails on an empty site title or one with a colon** (upstream
+  silverstripe/silverstripe-totp-authenticator#106 and #64). Upstream passes the SiteConfig title to
+  the TOTP issuer before any extension hook runs: an empty title gave a `TypeError` (or "Issuer must
+  not be empty" on spomky-labs/otphp 11.5) and a title such as `Foo: Bar` gave "Issuer must not
+  contain a colon", both a 500 when a member set up an authenticator app. For those titles the
+  bundle's `RegisterHandler` now strips colons (`:`, `%3A`) and lets an empty issuer fall back to
+  `LeftAndMain.application_name`, or registers without an issuer when nothing is left; a valid title
+  still goes through upstream unchanged. The `issuer` config and `application_name` are stripped of
+  colons too. The environment label from 1.7.0 applies as before (README section 2, "Issuer").
+
 ## 1.7.0 (2026-10-10)
 
 ### Added

@@ -93,3 +93,5 @@ en:
       ## Completely Locked Out?
 
       Contact the administrator. They can reset your MFA settings so you can set up again.
+  Restruct\MFABundle\TOTP\RegisterHandler:
+    SETTINGS_NOT_SUPPORTED: 'The authenticator app cannot be registered on this site right now. Please contact an administrator.'

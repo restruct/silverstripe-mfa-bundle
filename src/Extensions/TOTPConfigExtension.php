@@ -77,18 +77,37 @@ class TOTPConfigExtension extends Extension
     private const AUTO_LABEL_ENVIRONMENTS = ['dev', 'test'];
 
     /**
+     * The configured period in seconds, for the QR code and for checking the code at registration
+     * (Restruct\MFABundle\TOTP\RegisterHandler). Unset or 0 means the library default.
+     */
+    public static function getConfiguredPeriod(): int
+    {
+        return (int) static::config()->get('period') ?: 30;
+    }
+
+    /**
+     * The configured hash algorithm (sha1, sha256, sha512); unset means the library default.
+     */
+    public static function getConfiguredDigest(): string
+    {
+        return (string) static::config()->get('algorithm') ?: 'sha1';
+    }
+
+    /**
      * Called during TOTP registration to customize the TOTP object
      */
     public function updateTotp(TOTP $totp, ?Member $member): void
     {
-        $issuer = $this->config()->get('issuer');
-        if ($issuer) {
+        # Both issuer sources are sanitised like the label: a colon in either would make
+        # setIssuer() throw and registration fail (upstream totp-authenticator#106).
+        $issuer = static::sanitiseIssuer((string) $this->config()->get('issuer'));
+        if ($issuer !== '') {
             $totp->setIssuer($issuer);
         } elseif (!$totp->getIssuer()) {
             # RegisterHandler sets SiteConfig::Title as issuer, but that may be empty
             # (e.g. projects without SiteTree/CMS). Fall back to LeftAndMain.application_name.
-            $appName = LeftAndMain::config()->get('application_name');
-            if ($appName) {
+            $appName = static::sanitiseIssuer((string) LeftAndMain::config()->get('application_name'));
+            if ($appName !== '') {
                 $totp->setIssuer($appName);
             }
         }
@@ -172,9 +191,10 @@ class TOTPConfigExtension extends Extension
         $issuer = (string) $totp->getIssuer();
         if ($issuer === '') {
             # No issuer at all: the label alone is still better than an anonymous token.
-            # Reachable only through the hook itself (and the tests): upstream RegisterHandler
-            # calls setIssuer(SiteConfig Title) before firing it, and an empty or null title
-            # already fails there. Kept so the hook is safe whatever calls it.
+            # Reachable when neither the SiteConfig title nor LeftAndMain.application_name gives
+            # an issuer: Restruct\MFABundle\TOTP\RegisterHandler::start() then skips setIssuer()
+            # (upstream's start() would already have failed on the empty title). Also keeps the
+            # hook safe whatever else calls it.
             $totp->setIssuer($label);
             return;
         }
@@ -227,8 +247,11 @@ class TOTPConfigExtension extends Extension
      * spomky-labs/otphp throws InvalidLabelException from setIssuer() for an empty issuer or one
      * containing ':' (also its encoded forms '%3A'/'%3a'), so a colon in a label or format would
      * make TOTP registration fail outright. Strip those, then tidy the whitespace left behind.
+     *
+     * Public and static so Restruct\MFABundle\TOTP\RegisterHandler builds the base issuer
+     * (SiteConfig title, application_name) with the same rule as the label code here.
      */
-    private function sanitiseIssuer(string $value): string
+    public static function sanitiseIssuer(string $value): string
     {
         $value = str_ireplace(['%3A', ':'], ' ', $value);
         $value = (string) preg_replace('/\s+/u', ' ', $value);

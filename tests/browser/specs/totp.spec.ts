@@ -78,7 +78,9 @@ test('register the authenticator app with a computed code, then log in with a TO
 // https://github.com/restruct/silverstripe-mfa-bundle/issues/3 - updateTotp() only reaches the TOTP
 // object behind the QR code; register()/verify() check with a fresh 30-second SHA1 TOTP. Measured
 // red on SS5 and SS6 (2026-10-02): the URI says period=60, the 60-second code gets a 400.
-test.fixme('a configured TOTP period is used for the QR code AND for checking the code', async ({ page, browser, baseURL }) => {
+// Fixed by the Injector-replaced handlers in src/TOTP/ (2026-10-08); the login half below checks
+// that a login uses the period stored with the registration, not the current config.
+test('a configured TOTP period is used for the QR code AND for checking the code', async ({ page, browser, baseURL }) => {
     // TOTPConfigExtension.period = 60 (switched on by the fixture middleware's cookie). An
     // authenticator app set up from the QR code then makes 60-second codes; registration must
     // accept them.
@@ -105,4 +107,18 @@ test.fixme('a configured TOTP period is used for the QR code AND for checking th
     await v.locator('#mfa-app').getByRole('button', { name: 'Next' }).click();
     expect((await registered).status(), 'a code from the configured 60-second period is accepted').toBe(201);
     await first.done();
+
+    // --- Login with the registered 60-second app ---
+    // No variant cookie here, so the config is back at the default 30 s: the login must still
+    // check with the 60 s the registration was made with, or the member is locked out.
+    const second = await freshVisitor(browser, baseURL);
+    const w = second.page;
+    await submitLogin(w, EMAIL, PASSWORD);
+    await expect(w).toHaveURL(/\/Security\/login\/default\/mfa/);
+    if (60_000 - (Date.now() % 60_000) < 5_000) await new Promise((r) => setTimeout(r, 6_000));
+    await w.locator('#totp-code').fill(totp(secret, 0, Date.now(), 60));
+    const verified = w.waitForResponse((r) => r.request().method() === 'POST' && /\/mfa\/verify\/totp/.test(r.url()));
+    await w.locator('#mfa-app').getByRole('button', { name: /Next|Verify/ }).first().click();
+    expect((await verified).status(), 'a 60-second code from the registered app logs in').toBe(200);
+    await second.done();
 });
