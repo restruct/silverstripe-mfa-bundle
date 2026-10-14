@@ -95,12 +95,23 @@ export async function submitLogin(page: Page, email: string, password: string): 
  * Security admin sections that hold members or groups are read-only until the user re-enters
  * their password ("sudo mode": on SS6, and on SS5 from framework 5.3). Activate it through the
  * real notice when it is shown; a no-op on a version without it.
+ *
+ * The notice button is mounted by the admin's React AFTER the GridField is visible, so counting it
+ * once decides too early on a slow load and skips the activation (#9; same race as
+ * restruct/silverstripe-admintweaks#74). Instead wait, bounded by the expect timeout, until one of
+ * the two definite states is visible: the notice button (read-only, sudo mode inactive) or the
+ * GridField's "Add" button (editable; a read-only GridField drops GridFieldAddNewButton, see
+ * GridField::$default_readonly_components). Only then branch.
  */
 export async function ensureSudoMode(page: Page): Promise<void> {
     await page.goto('/admin/security');
-    await expect(page.locator('#Form_EditForm_users')).toBeVisible();
+    const grid = page.locator('#Form_EditForm_users');
+    await expect(grid).toBeVisible();
     const notice = page.locator('.sudo-mode-password-field__notice-button');
-    if ((await notice.count()) === 0) {
+    const editable = grid.locator('a.new-link');
+    // first(): never both at once, but a strict-mode error must not be what decides the branch.
+    await expect(notice.or(editable).first(), 'sudo-mode notice or editable users GridField').toBeVisible();
+    if (await editable.isVisible()) {
         return;
     }
     await notice.click();
