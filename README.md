@@ -256,36 +256,37 @@ Restruct\MFABundle\Extensions\TOTPConfigExtension:
 
 # Settings on SilverStripe's TOTP classes (set directly)
 SilverStripe\TOTP\Method:
-  code_length: 6                 # Leave at 6: only the input field follows it (see below)
+  code_length: 6                 # Digits per code, 6 to 8 (default: 6; see below)
 
 SilverStripe\TOTP\RegisterHandler:
   secret_length: 16              # Length of generated secret (default: 16)
   user_help_link: 'https://example.com/mfa-help'  # Help link during setup
 ```
 
-Leave `code_length` at 6. Upstream only passes it to the input field: the code in the QR code and
-the code the server checks stay 6 digits, so with another value no code is accepted
-([#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)).
-
-`period` and `algorithm` apply to new registrations: they go into the QR code, the code is checked
-with them, and they are stored with the registration. A login is always checked with the settings
-the member registered with, so changing them later does not lock anyone out; members who should
+`period`, `algorithm` and `code_length` apply to new registrations: they go into the QR code, the
+code is checked with them, and they are stored with the registration. A login is always checked
+with the settings the member registered with (the login field also asks for the number of digits
+the member registered with), so changing them later does not lock anyone out; members who should
 move to the new settings register their app again. Registrations made before 1.8.0 keep 30 s /
-SHA1, which is what they were checked with. Not every authenticator app honours a non-default
-period or algorithm; one that ignores them cannot register.
+SHA1, and registrations made before 1.9.0 keep 6 digits, which is what they were checked with.
+Upstream applies `code_length` to the input field only, so without the bundle a value other than 6
+accepts no code at all ([#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)). Not
+every authenticator app honours a non-default period, algorithm or number of digits; one that
+ignores them cannot register.
 
 To do this the bundle replaces `SilverStripe\TOTP\RegisterHandler` and `VerifyHandler` with
 subclasses through the Injector (upstream has no hook where the code is checked). A project that
 replaces those handlers itself should extend `Restruct\MFABundle\TOTP\RegisterHandler` /
 `VerifyHandler` instead. Replace both or neither: a `VerifyHandler` that does not extend the
-bundle's checks every login with 30 s / SHA1 and would lock out members registered with other
-settings, so with a non-default period or algorithm the bundle then refuses the registration (the
-member is asked to contact an administrator, and an error is logged).
+bundle's checks every login with 30 s / SHA1 / 6 digits and would lock out members registered with
+other settings, so with a non-default period, algorithm or `code_length` the bundle then refuses the
+registration (the member is asked to contact an administrator, and an error is logged).
 
 **Rollback:** with a non-default `period` or `algorithm`, going back to 1.7.0 or earlier, or
 removing the bundle, locks out every member registered with those settings: logins are then checked
-with 30 s / SHA1 again. Those members have to register their app again (an administrator can reset
-their MFA).
+with 30 s / SHA1 again. Likewise, with a `code_length` other than 6, going back to 1.8.0 or earlier,
+or removing the bundle, locks out every member registered with that number of digits. Those members
+have to register their app again (an administrator can reset their MFA).
 
 #### Issuer
 
@@ -428,7 +429,7 @@ compensate, set it back.
 
 | Setting | Class | Default | Description |
 |---------|-------|---------|-------------|
-| `code_length` | `Method` | 6 | Digits the input field expects. Leave at 6: the code itself is always 6 digits ([#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)) |
+| `code_length` | `Method` | 6 | Digits per code (6 to 8): QR code, check and input field. Stored per registration, so a change applies to new registrations only (since 1.9.0, [#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)) |
 | `secret_length` | `RegisterHandler` | 16 | Secret key length |
 
 ### SilverStripe WebAuthn settings (set directly on SS classes)
