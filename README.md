@@ -1,36 +1,214 @@
-# Silverstripe MFA Bundle
+# Silverstripe MFA bundle
+
+Multi-factor authentication for the Silverstripe CMS in one install: every CMS user sets up an
+authenticator app (TOTP) or a security key, Touch ID, Windows Hello or passkey (WebAuthn), with a
+grace period to do it in. Administrators can reset one member's MFA, and your users get help pages
+in their own language. For Silverstripe 5 and 6.
+
+![The Silverstripe login screen after the password: "Add extra security to your account", explaining how multi-factor authentication works, with a "Get started" button and a "Setup later" link for the grace period](docs/images/login-mfa-prompt.png)
 
 *Maintained by [Restruct](https://github.com/restruct). If this module saves you time, you can
 [support ongoing maintenance](https://github.com/sponsors/restruct).*
 
-Portable MFA bundle for Silverstripe 5 and 6 with TOTP (Google Authenticator) and WebAuthn (security keys/biometrics) support.
+## Upstream MFA is a framework, not a finished setup
 
-## Quick Start
+`silverstripe/mfa` provides the multi-factor login flow, but on its own MFA stays optional and it
+brings no authenticator method of its own: you install the methods yourself, set a secret key,
+switch on "MFA required" in Settings and choose a grace period. The security key method then
+accepts external keys only (USB/NFC), so Touch ID, Windows Hello and other built-in authenticators
+are not offered. The help links point your editors to
+Silverstripe's user guide, and to reset one member's authenticator an administrator has only the
+account reset email, which resets their password as well. A few upstream defects get in the way
+too: a site title that is empty or contains a colon makes authenticator-app registration fail with
+a 500, and every wrong password counts twice towards the account lockout.
 
-1. `composer require restruct/silverstripe-mfa-bundle`
-2. Add `SS_MFA_SECRET_KEY` to `.env`, run `dev/build`
+## One install: MFA required, two methods, tools for administrators
 
-That's it. MFA is enforced with a 6-month grace period out of the box.
+- **MFA required for every CMS user** from the first `dev/build`, with a 6-month grace period in
+  which they can choose "Setup later" ([section 4](#4-mfa-requirement-enabled-by-default)).
+- **Two methods to choose from**: an authenticator app (TOTP: Google Authenticator, 1Password,
+  Authy and the like) and a security key or the device's own biometrics (WebAuthn: USB/NFC keys,
+  Touch ID, Face ID, Windows Hello, passkeys), plus upstream's recovery codes. It bundles
+  `silverstripe/mfa`, `silverstripe/totp-authenticator` and `silverstripe/webauthn-authenticator`.
+- **Authenticator-app settings that hold**: issuer name, period and algorithm are configurable, and
+  period and algorithm are used to check the code, not only to build the QR code. Tokens registered
+  on a dev or test site are labelled `(DEV)` or `(TEST)`. An empty site title, or one with a colon,
+  no longer breaks registration ([section 2](#2-configure-totp-settings-optional)).
+- **A "Registered MFA Methods" list on each member**, so an administrator can delete a method and
+  have that member register again.
+- **Help pages** at `/mfa-help/` in five languages, linked from the login screens.
+- **Optional: each login attempt counted once** instead of twice
+  ([section 6](#6-count-each-login-attempt-once-optional-opt-in)).
 
-## Features
+### Members register an authenticator app or a security key
 
-- Bundles `silverstripe/mfa`, `silverstripe/totp-authenticator`, and `silverstripe/webauthn-authenticator`
-- Configurable TOTP settings (issuer name, period, algorithm, environment label)
-- WebAuthn configured to allow both biometrics (Touch ID) and security keys
-- Admin interface to reset/remove user MFA methods
-- Sensible defaults: requires at least 1 MFA method
+![The "Register with authenticator app" step of the login: a QR code to scan and, next to it, the same secret as a code to type into the app by hand, with Next and Back buttons](docs/images/totp-scan.png)
+
+The screenshot is from a throwaway test host: the secret shown belongs to a test account that no
+longer exists.
+
+**Authenticator app (TOTP)**
+1. A secret is generated and encrypted with `SS_MFA_SECRET_KEY`
+2. The QR code shows your configured issuer name, with the environment label on dev and test sites (e.g. `My Site (DEV)`)
+3. User scans with Google Authenticator, Authy, 1Password, etc.
+4. On login, user enters the 6-digit code from their app
+
+**Security key or biometrics (WebAuthn)**
+1. User registers their authenticator (USB key, Touch ID, etc.)
+2. A credential is stored, tied to your domain
+3. On login, user taps their key or uses biometrics
+
+**Note:** WebAuthn credentials are domain-specific. Not recommended with `silverstripe/subsites` as each subsite domain would need separate credentials.
+
+### Administrators can reset one member's MFA
+
+![A member's edit form in Security: upstream's MFA summary ("Authenticator app (default): Registered", "Recovery codes: Created") and below it the bundle's "Registered MFA Methods" list with the authenticator app and the recovery codes, each with a Delete action](docs/images/admin-registered-methods.png)
+
+Admins with the `MFA_ADMINISTER_REGISTERED_METHODS` permission can manage MFA for other users:
+
+1. Go to **Security > Users** and edit a user
+2. Find the **Registered MFA Methods** GridField, directly below the user's MFA settings (only shown for users with MFA configured)
+3. Delete any MFA methods to force the user to re-register
+
+When all MFA methods are removed, the user will be prompted to set up MFA again on their next login.
+
+**Note:** This GridField only appears when viewing other users' accounts, not your own (use the standard MFA interface for self-management).
+
+#### Alternative: Account Reset Email
+
+SilverStripe MFA also includes a built-in "Send account reset email" button that sends the user a link to reset both their password and MFA settings. This is useful when you want the user to verify their identity via email.
+
+### Help pages for your users
+
+![The bundle's help page "Setting Up Authenticator App", with tabs for Overview, Authenticator App, Security Key and Backup Codes, and sections on what you need, setup, logging in and problems](docs/images/help-totp.png)
+
+This bundle includes translatable help pages served at `/mfa-help/`:
+
+| URL | Content |
+|-----|---------|
+| `/mfa-help/` | Overview of MFA |
+| `/mfa-help/totp` | Authenticator app setup |
+| `/mfa-help/webauthn` | Security key / biometrics setup |
+| `/mfa-help/backup-codes` | Backup codes explanation |
+
+Help pages automatically display in the logged-in user's CMS locale (from `Member.Locale`), falling back to the site's default locale. Translations are included for: English, Dutch, German, French, and Spanish.
+
+The login screens link to these pages: the bundle sets `user_help_link` on the MFA handlers (see
+[Help link settings](#help-link-settings-set-by-this-bundle)).
+
+#### Disabling Help Pages
+
+To disable the built-in help pages entirely, set `DISABLE_MFA_HELP` as an environment variable:
+
+```env
+# .env
+DISABLE_MFA_HELP=1
+```
+
+A `define('DISABLE_MFA_HELP', true)` in `app/_config.php` does not work: the route is decided when
+the configuration is built, before `_config.php` files run, so the pages keep answering.
+
+The login screens still link to `/mfa-help/` after that: point the help links elsewhere, or set
+them to empty strings (see [Customizing Help Content](#customizing-help-content)).
+
+#### Changing the URL Segment
+
+To serve help pages at a different URL (e.g., `/hulp/`):
+
+1. Disable the default route via `DISABLE_MFA_HELP`
+2. Configure your custom URL segment and Director rule:
+
+```yaml
+# app/_config/mfa-help.yml
+Restruct\MFABundle\Controllers\MFAHelpController:
+  url_segment: 'hulp'
+
+SilverStripe\Control\Director:
+  rules:
+    'hulp': 'Restruct\MFABundle\Controllers\MFAHelpController'
+```
+
+3. Update the help URLs to match your custom segment:
+
+```yaml
+SilverStripe\TOTP\RegisterHandler:
+  user_help_link: '/hulp/totp'
+
+SilverStripe\WebAuthn\RegisterHandler:
+  user_help_link: '/hulp/webauthn'
+
+SilverStripe\MFA\Authenticator\LoginHandler:
+  user_help_link: '/hulp/'
+
+SilverStripe\MFA\BackupCode\RegisterHandler:
+  user_help_link: '/hulp/backup-codes'
+```
+
+#### Customizing Help Content
+
+Override the translations via lang files in your project, or point to your own URLs:
+
+```yaml
+SilverStripe\TOTP\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/totp'
+
+SilverStripe\WebAuthn\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/security-keys'
+
+SilverStripe\MFA\Authenticator\LoginHandler:
+  user_help_link: 'https://your-site.com/help/mfa'
+
+SilverStripe\MFA\BackupCode\RegisterHandler:
+  user_help_link: 'https://your-site.com/help/backup-codes'
+```
+
+To disable help links entirely, set them to empty strings.
+
+### Touch ID, security key or passkey: WebAuthn authenticator types
+
+WebAuthn supports different authenticator types with different trade-offs:
+
+#### Platform vs Cross-Platform
+
+| Type | Examples | Pros | Cons |
+|------|----------|------|------|
+| **Platform** | Touch ID, Face ID, Windows Hello | Free, built-in, convenient | Tied to single device |
+| **Cross-platform** | YubiKey, USB/NFC security keys | Portable, works anywhere | Requires purchasing hardware |
+
+#### Passkeys (Synced Credentials)
+
+Modern browsers support **passkeys**: WebAuthn credentials that sync across devices:
+
+- **iCloud Keychain**: Syncs across Apple devices (Mac, iPhone, iPad)
+- **Google Password Manager**: Syncs across Chrome browsers logged into same Google account
+- **Password managers**: 1Password, Bitwarden, Proton Pass can store passkeys
+
+When a user registers WebAuthn with `authenticator_attachment: ~` (both), the browser offers choices:
+1. **This device** (platform): Touch ID/Face ID, may sync via iCloud/Google
+2. **Security key** (cross-platform): USB/NFC hardware key
+3. **Phone/tablet**: Use another device via QR code
+
+Users can register multiple authenticators for redundancy.
+
+#### Recommendation
+
+This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum flexibility. Users can choose based on their needs:
+- Office workers with one machine -> Touch ID
+- Mobile workers -> Synced passkey or hardware key
+- High-security environments -> Hardware keys only (`'cross-platform'`)
 
 ## Requirements
 
 - Silverstripe 5.4 or newer, or 6
 - PHP 8.1 or newer (Silverstripe 6 itself requires PHP 8.3)
 - `ext-bcmath` PHP extension (required by WebAuthn)
+- HTTPS for the security key (WebAuthn) method: on plain HTTP upstream shows it as unsupported
 
 ## Version compatibility
 
 | Branch | Module version | Silverstripe | PHP |
 |--------|----------------|--------------|-----|
-| `main` | `1.5.x` | `^5.4 \|\| ^6` | `^8.1` |
+| `main` | `1.5.0` and later | `^5.4 \|\| ^6` | `^8.1` |
 | (tags only) | `0.1` - `1.4.x` | `^5` | `^8.1` |
 
 `main` is the only maintained line: it supports every Silverstripe version this module targets, so
@@ -43,6 +221,9 @@ there is no separate maintenance branch. Silverstripe 4 is not supported.
 ```bash
 composer require restruct/silverstripe-mfa-bundle
 ```
+
+Then add `SS_MFA_SECRET_KEY` to `.env` ([section 1](#1-set-encryption-key-required)) and run
+`dev/build`. That's it. MFA is enforced with a 6-month grace period out of the box.
 
 ## Configuration
 
@@ -75,12 +256,16 @@ Restruct\MFABundle\Extensions\TOTPConfigExtension:
 
 # Settings on SilverStripe's TOTP classes (set directly)
 SilverStripe\TOTP\Method:
-  code_length: 6                 # Number of digits (default: 6)
+  code_length: 6                 # Leave at 6: only the input field follows it (see below)
 
 SilverStripe\TOTP\RegisterHandler:
   secret_length: 16              # Length of generated secret (default: 16)
   user_help_link: 'https://example.com/mfa-help'  # Help link during setup
 ```
+
+Leave `code_length` at 6. Upstream only passes it to the input field: the code in the QR code and
+the code the server checks stay 6 digits, so with another value no code is accepted
+([#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)).
 
 `period` and `algorithm` apply to new registrations: they go into the QR code, the code is checked
 with them, and they are stored with the registration. A login is always checked with the settings
@@ -243,7 +428,7 @@ compensate, set it back.
 
 | Setting | Class | Default | Description |
 |---------|-------|---------|-------------|
-| `code_length` | `Method` | 6 | Number of digits (6-8) |
+| `code_length` | `Method` | 6 | Digits the input field expects. Leave at 6: the code itself is always 6 digits ([#7](https://github.com/restruct/silverstripe-mfa-bundle/issues/7)) |
 | `secret_length` | `RegisterHandler` | 16 | Secret key length |
 
 ### SilverStripe WebAuthn settings (set directly on SS classes)
@@ -276,39 +461,6 @@ Override these if you use a custom URL segment or external help pages.
 |---------|-------|---------|-------------|
 | `required_mfa_methods` | `EnforcementManager` | 1 | Minimum methods required |
 
-## How it works
-
-### TOTP (Authenticator App)
-1. A secret is generated and encrypted with `SS_MFA_SECRET_KEY`
-2. The QR code shows your configured issuer name, with the environment label on dev and test sites (e.g. `My Site (DEV)`)
-3. User scans with Google Authenticator, Authy, 1Password, etc.
-4. On login, user enters the 6-digit code from their app
-
-### WebAuthn (Security Key / Biometrics)
-1. User registers their authenticator (USB key, Touch ID, etc.)
-2. A credential is stored, tied to your domain
-3. On login, user taps their key or uses biometrics
-
-**Note:** WebAuthn credentials are domain-specific. Not recommended with `silverstripe/subsites` as each subsite domain would need separate credentials.
-
-## Admin Management
-
-### Resetting user MFA
-
-Admins with the `MFA_ADMINISTER_REGISTERED_METHODS` permission can manage MFA for other users:
-
-1. Go to **Security > Users** and edit a user
-2. Find the **Registered MFA Methods** GridField, directly below the user's MFA settings (only shown for users with MFA configured)
-3. Delete any MFA methods to force the user to re-register
-
-When all MFA methods are removed, the user will be prompted to set up MFA again on their next login.
-
-**Note:** This GridField only appears when viewing other users' accounts, not your own (use the standard MFA interface for self-management).
-
-### Alternative: Account Reset Email
-
-SilverStripe MFA also includes a built-in "Send account reset email" button that sends the user a link to reset both their password and MFA settings. This is useful when you want the user to verify their identity via email.
-
 ## Troubleshooting
 
 ### "This method has not been configured yet"
@@ -331,125 +483,11 @@ Use `BYPASS_MFA=1` in `.env` to skip MFA during development.
 
 **Note:** WebAuthn passkeys require a trusted HTTPS certificate. Self-signed certificates may cause registration to fail with Chrome's native passkey storage.
 
-## Understanding WebAuthn Authenticator Types
-
-WebAuthn supports different authenticator types with different trade-offs:
-
-### Platform vs Cross-Platform
-
-| Type | Examples | Pros | Cons |
-|------|----------|------|------|
-| **Platform** | Touch ID, Face ID, Windows Hello | Free, built-in, convenient | Tied to single device |
-| **Cross-platform** | YubiKey, USB/NFC security keys | Portable, works anywhere | Requires purchasing hardware |
-
-### Passkeys (Synced Credentials)
-
-Modern browsers support **passkeys** - WebAuthn credentials that sync across devices:
-
-- **iCloud Keychain**: Syncs across Apple devices (Mac, iPhone, iPad)
-- **Google Password Manager**: Syncs across Chrome browsers logged into same Google account
-- **Password managers**: 1Password, Bitwarden, Proton Pass can store passkeys
-
-When a user registers WebAuthn with `authenticator_attachment: ~` (both), the browser offers choices:
-1. **This device** (platform) - Touch ID/Face ID, may sync via iCloud/Google
-2. **Security key** (cross-platform) - USB/NFC hardware key
-3. **Phone/tablet** - Use another device via QR code
-
-Users can register multiple authenticators for redundancy.
-
-### Recommendation
-
-This bundle defaults to `authenticator_attachment: ~` (allow both) for maximum flexibility. Users can choose based on their needs:
-- Office workers with one machine -> Touch ID
-- Mobile workers -> Synced passkey or hardware key
-- High-security environments -> Hardware keys only (`'cross-platform'`)
-
-## Help Pages
-
-This bundle includes translatable help pages served at `/mfa-help/`:
-
-| URL | Content |
-|-----|---------|
-| `/mfa-help/` | Overview of MFA |
-| `/mfa-help/totp` | Authenticator app setup |
-| `/mfa-help/webauthn` | Security key / biometrics setup |
-| `/mfa-help/backup-codes` | Backup codes explanation |
-
-Help pages automatically display in the logged-in user's CMS locale (from `Member.Locale`), falling back to the site's default locale. Translations are included for: English, Dutch, German, French, and Spanish.
-
-### Disabling Help Pages
-
-To disable the built-in help pages entirely, set `DISABLE_MFA_HELP` as an environment variable or PHP constant:
-
-```env
-# .env
-DISABLE_MFA_HELP=1
-```
-
-Or in `app/_config.php`:
-
-```php
-define('DISABLE_MFA_HELP', true);
-```
-
-### Changing the URL Segment
-
-To serve help pages at a different URL (e.g., `/hulp/`):
-
-1. Disable the default route via `DISABLE_MFA_HELP`
-2. Configure your custom URL segment and Director rule:
-
-```yaml
-# app/_config/mfa-help.yml
-Restruct\MFABundle\Controllers\MFAHelpController:
-  url_segment: 'hulp'
-
-SilverStripe\Control\Director:
-  rules:
-    'hulp': 'Restruct\MFABundle\Controllers\MFAHelpController'
-```
-
-3. Update the help URLs to match your custom segment:
-
-```yaml
-SilverStripe\TOTP\RegisterHandler:
-  user_help_link: '/hulp/totp'
-
-SilverStripe\WebAuthn\RegisterHandler:
-  user_help_link: '/hulp/webauthn'
-
-SilverStripe\MFA\Authenticator\LoginHandler:
-  user_help_link: '/hulp/'
-
-SilverStripe\MFA\BackupCode\RegisterHandler:
-  user_help_link: '/hulp/backup-codes'
-```
-
-### Customizing Help Content
-
-Override the translations via lang files in your project, or point to your own URLs:
-
-```yaml
-SilverStripe\TOTP\RegisterHandler:
-  user_help_link: 'https://your-site.com/help/totp'
-
-SilverStripe\WebAuthn\RegisterHandler:
-  user_help_link: 'https://your-site.com/help/security-keys'
-
-SilverStripe\MFA\Authenticator\LoginHandler:
-  user_help_link: 'https://your-site.com/help/mfa'
-
-SilverStripe\MFA\BackupCode\RegisterHandler:
-  user_help_link: 'https://your-site.com/help/backup-codes'
-```
-
-To disable help links entirely, set them to empty strings.
-
 ## Running the tests
 
 The suite needs a booted Silverstripe project. Require the module into a Silverstripe 5 or 6 project
-through a **path repository with `"symlink": true`** - `/tests` is `export-ignore`, so a Packagist or
-mirrored install contains no tests - add `silverstripe/recipe-testing`, map the
+through a **path repository with `"symlink": true`** (`/tests` is `export-ignore`, so a Packagist or
+mirrored install contains no tests), add `silverstripe/recipe-testing`, map the
 `Restruct\MFABundle\Tests\` namespace to `vendor/restruct/silverstripe-mfa-bundle/tests/` in
 `autoload-dev`, then flush the test manifest as the runner requires:
 
@@ -463,6 +501,9 @@ SS_PHPUNIT_FLUSH=1 vendor/bin/phpunit --fail-on-empty-test-suite \
 ```
 
 `.github/workflows/ci.yml` builds exactly such a host for each supported major.
+
+Browser tests (Playwright) live in `tests/browser/`. The screenshots in this README are generated
+from a test host by `tests/browser/screenshots/readme.shot.ts`; see the README in that directory.
 
 ## Further Reading
 
