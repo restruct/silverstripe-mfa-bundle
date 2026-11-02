@@ -9,6 +9,7 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Extension;
 use SilverStripe\Security\Member;
+use SilverStripe\TOTP\Method;
 
 /**
  * Configurable TOTP settings for authenticator apps.
@@ -91,6 +92,16 @@ class TOTPConfigExtension extends Extension
     public static function getConfiguredDigest(): string
     {
         return (string) static::config()->get('algorithm') ?: 'sha1';
+    }
+
+    /**
+     * The configured number of digits per code: SilverStripe\TOTP\Method.code_length, which upstream
+     * only passes to the input field (issue #7). The bundle's handlers also apply it to the QR code
+     * and to checking the code at registration. Unset or 0 means the library default (6).
+     */
+    public static function getConfiguredDigits(): int
+    {
+        return (int) Method::config()->get('code_length') ?: 6;
     }
 
     /**

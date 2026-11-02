@@ -18,13 +18,15 @@ use SilverStripe\TOTP\RegisterHandler as UpstreamRegisterHandler;
 use SilverStripe\TOTP\VerifyHandler as UpstreamVerifyHandler;
 
 /**
- * TOTP registration that checks the code with the configured period and algorithm.
+ * TOTP registration that checks the code with the configured period, algorithm and digits.
  *
  * Upstream applies TOTPConfigExtension (the updateTotp hook) only to the TOTP object behind the
  * QR code in start(). register() builds a fresh TOTP through TOTPAware::getTotp() with the library
  * defaults (30 s / SHA1), so with any other period or algorithm the code the app makes from the QR
- * code was always refused (issue #3). There is no hook in getTotp(), so this subclass overrides
- * that one protected method; it replaces the upstream class through the Injector (see
+ * code was always refused (issue #3). The same goes for the number of digits: upstream passes
+ * SilverStripe\TOTP\Method.code_length only to the input field, so the QR code and the check stayed
+ * 6 digits (issue #7). There is no hook in getTotp(), so this subclass overrides that one
+ * protected method; it replaces the upstream class through the Injector (see
  * _config/mfa-bundle.yml), which is how SilverStripe\TOTP\Method creates its handlers.
  *
  * The settings the code was checked with are stored with the registration, so a later change of
@@ -110,12 +112,14 @@ class RegisterHandler extends UpstreamRegisterHandler
     }
 
     /**
-     * Whether the configured period or algorithm differs from the library defaults (30 s / SHA1).
+     * Whether the configured period, algorithm or digits differ from the library defaults
+     * (30 s / SHA1 / 6 digits).
      */
     protected function usesNonDefaultSettings(): bool
     {
         return TOTPConfigExtension::getConfiguredPeriod() !== 30
-            || strtolower(TOTPConfigExtension::getConfiguredDigest()) !== 'sha1';
+            || strtolower(TOTPConfigExtension::getConfiguredDigest()) !== 'sha1'
+            || TOTPConfigExtension::getConfiguredDigits() !== 6;
     }
 
     /**
@@ -135,27 +139,30 @@ class RegisterHandler extends UpstreamRegisterHandler
         $totp = parent::getTotp($store);
         $totp->setPeriod(TOTPConfigExtension::getConfiguredPeriod());
         $totp->setDigest(TOTPConfigExtension::getConfiguredDigest());
+        # Method.code_length, which start() also returns as the input field's codeLength (#7).
+        $totp->setDigits(TOTPConfigExtension::getConfiguredDigits());
         return $totp;
     }
 
     /**
-     * Adds the period and digest to the context, which RegisteredMethodManager stores as the
-     * RegisteredMethod's Data next to the encrypted secret.
+     * Adds the period, digest and digits to the context, which RegisteredMethodManager stores as
+     * the RegisteredMethod's Data next to the encrypted secret.
      */
     public function register(HTTPRequest $request, StoreInterface $store): Result
     {
-        # A non-default period/algorithm is only safe when logins are checked by the bundle's
-        # VerifyHandler, which reads them back from the registration. A project that replaced only
-        # SilverStripe\TOTP\VerifyHandler (with its own subclass of upstream) would check every
-        # login with 30 s / SHA1, so the member who registers now would be locked out at the next
-        # login. Refuse the registration instead, and tell the developer why.
+        # A non-default period/algorithm/digits is only safe when logins are checked by the
+        # bundle's VerifyHandler, which reads them back from the registration. A project that
+        # replaced only SilverStripe\TOTP\VerifyHandler (with its own subclass of upstream) would
+        # check every login with 30 s / SHA1 / 6 digits, so the member who registers now would be
+        # locked out at the next login. Refuse the registration instead, and tell the developer why.
         if ($this->usesNonDefaultSettings() && !$this->verifyHandlerReadsStoredSettings()) {
             Injector::inst()->get(LoggerInterface::class)->error(
-                'TOTP registration refused: TOTPConfigExtension sets a non-default period or algorithm, but '
+                'TOTP registration refused: TOTPConfigExtension sets a non-default period or algorithm, or '
+                . 'SilverStripe\TOTP\Method.code_length is not 6, but '
                 . 'SilverStripe\TOTP\VerifyHandler is replaced by '
                 . get_class(Injector::inst()->create(UpstreamVerifyHandler::class))
                 . ', which does not extend ' . VerifyHandler::class
-                . '. Logins would be checked with 30 s / SHA1 and the member locked out.'
+                . '. Logins would be checked with 30 s / SHA1 / 6 digits and the member locked out.'
             );
             return Result::create(false, _t(
                 __CLASS__ . '.SETTINGS_NOT_SUPPORTED',
@@ -171,6 +178,7 @@ class RegisterHandler extends UpstreamRegisterHandler
         return $result->setContext(array_merge($result->getContext(), [
             'period' => TOTPConfigExtension::getConfiguredPeriod(),
             'digest' => TOTPConfigExtension::getConfiguredDigest(),
+            'digits' => TOTPConfigExtension::getConfiguredDigits(),
         ]));
     }
 }

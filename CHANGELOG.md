@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.9.0 (2026-11-02)
+
+### Fixed
+
+- **`SilverStripe\TOTP\Method.code_length` now sets the number of digits of the TOTP code, not only
+  of the input field** (#7). Upstream passes `code_length` to the input field only: the QR code and
+  the server check stayed 6 digits, so with `code_length: 8` no code was ever accepted. The bundle's
+  `RegisterHandler` now puts the configured digits in the QR code (`digits=` in the otpauth URI),
+  checks the code with them and stores them with the registration, next to the period and algorithm
+  (1.8.0). A login is checked with the stored digits, and the login field asks for that many, so
+  changing `code_length` later does not lock anyone out. Registrations made before this release
+  have no digits stored and keep 6. As with a non-default period or algorithm, a registration with a
+  `code_length` other than 6 is refused when `SilverStripe\TOTP\VerifyHandler` is replaced by a class
+  that does not extend the bundle's. **Rollback:** with a `code_length` other than 6, going back to
+  1.8.0 or earlier, or removing the bundle, locks out every member registered with that number of
+  digits (they must register their app again).
+
 ## 1.8.0 (2026-10-11)
 
 ### Fixed
