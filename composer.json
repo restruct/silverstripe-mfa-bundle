@@ -1,14 +1,19 @@
 {
     "name": "restruct/silverstripe-mfa-bundle",
-    "description": "Portable Silverstripe MFA bundle with TOTP and WebAuthn support, plus configurable TOTP settings",
+    "description": "Multi-factor authentication for the Silverstripe CMS in one install: authenticator apps (TOTP) and security keys or passkeys (WebAuthn), required for CMS users with a grace period",
     "type": "silverstripe-vendormodule",
     "keywords": [
         "silverstripe",
+        "silverstripe-module",
+        "silverstripe-cms",
         "mfa",
+        "2fa",
+        "multi-factor-authentication",
         "totp",
         "webauthn",
-        "2fa",
-        "authentication"
+        "passkeys",
+        "authentication",
+        "security"
     ],
     "license": "MIT",
     "authors": [
