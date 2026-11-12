@@ -3,6 +3,7 @@
 namespace Restruct\MFABundle\Tests;
 
 use OTPHP\TOTP;
+use ReflectionClass;
 use Restruct\MFABundle\Authenticator\ChangePasswordHandler;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Core\Environment;
@@ -12,6 +13,7 @@ use SilverStripe\MFA\Authenticator\ChangePasswordHandler as MFAChangePasswordHan
 use SilverStripe\MFA\Authenticator\MemberAuthenticator;
 use SilverStripe\MFA\Service\EncryptionAdapterInterface;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\MemberAuthenticator\ChangePasswordHandler as FrameworkChangePasswordHandler;
 
 /**
  * Regression tests for CVE-2026-55186: the password reset flow of silverstripe/mfa 5 let a member
@@ -169,6 +171,15 @@ class ChangePasswordHandlerTest extends FunctionalTest
      */
     private function openResetLink(Member $member): void
     {
+        # Silverstripe 6 keeps per-request flags in statics that survive between the simulated
+        # requests of one test process; reset them as framework 6's own ChangePasswordHandlerTest does.
+        # Silverstripe 5 has no such statics.
+        $handler = new ReflectionClass(FrameworkChangePasswordHandler::class);
+        foreach (['tempHashAlreadyGenerated', 'tempHashAlreadyProcessed'] as $flag) {
+            if ($handler->hasProperty($flag)) {
+                $handler->setStaticPropertyValue($flag, false);
+            }
+        }
         $token = $member->generateAutologinTokenAndStoreHash();
         $this->get("Security/changepassword?m={$member->ID}&t={$token}");
         $this->assertNotEmpty($this->session()->get('AutoLoginHash'), 'reset link should put the hash in the session');
