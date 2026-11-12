@@ -29,6 +29,11 @@ SilverStripe\Core\Injector\Injector:
     class: Restruct\MFABundle\TOTP\RegisterHandler
   SilverStripe\TOTP\VerifyHandler:
     class: Restruct\MFABundle\TOTP\VerifyHandler
+  # Require the MFA check before a password reset is accepted, not only before the form is shown
+  # (CVE-2026-55186, no upstream fix for CMS 5). Upstream's MemberAuthenticator creates this handler
+  # with ::create(), so the replacement reaches every reset.
+  SilverStripe\MFA\Authenticator\ChangePasswordHandler:
+    class: Restruct\MFABundle\Authenticator\ChangePasswordHandler
 
 # WebAuthn: Allow both platform authenticators (Touch ID, Windows Hello)
 # and cross-platform authenticators (USB security keys)
