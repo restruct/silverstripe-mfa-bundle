@@ -2,12 +2,15 @@
 
 namespace Restruct\MFABundle\Tests;
 
+use OTPHP\TOTP;
 use Restruct\MFABundle\Authenticator\ChangePasswordHandler;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\FunctionalTest;
 use SilverStripe\MFA\Authenticator\ChangePasswordHandler as MFAChangePasswordHandler;
 use SilverStripe\MFA\Authenticator\MemberAuthenticator;
+use SilverStripe\MFA\Service\EncryptionAdapterInterface;
 use SilverStripe\Security\Member;
 
 /**
@@ -26,6 +29,27 @@ class ChangePasswordHandlerTest extends FunctionalTest
     protected static $fixture_file = 'ChangePasswordHandlerTest.yml';
 
     private const NEW_PASSWORD = 'Changed-Passw0rd-1234';
+
+    private const TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+
+    private const MFA_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+
+    private ?string $previousKey = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        # Decrypting a TOTP secret needs a key; set a test key for this test only and restore
+        # whatever was there afterwards.
+        $this->previousKey = Environment::getEnv('SS_MFA_SECRET_KEY') ?: null;
+        Environment::setEnv('SS_MFA_SECRET_KEY', self::MFA_KEY);
+    }
+
+    protected function tearDown(): void
+    {
+        Environment::setEnv('SS_MFA_SECRET_KEY', (string) $this->previousKey);
+        parent::tearDown();
+    }
 
     public function testHandlerIsReplacedThroughTheInjector()
     {
@@ -99,6 +123,35 @@ class ChangePasswordHandlerTest extends FunctionalTest
         $this->assertStringNotContainsString('NewPassword1', $body, 'password form should not be shown');
     }
 
+    public function testRealMfaCheckThroughTheEndpointsAllowsTheReset()
+    {
+        $member = $this->objFromFixture(Member::class, 'alice');
+        $passwordBefore = $member->Password;
+        $this->giveTotpSecret($member);
+
+        $this->openResetLink($member);
+        # The MFA app's own calls: start the TOTP check, then send a code from the authenticator
+        $this->assertSame(200, $this->get('Security/changepassword/mfa/login/totp')->getStatusCode());
+        $verify = $this->post(
+            'Security/changepassword/mfa/login/totp',
+            [],
+            ['Content-Type' => 'application/json'],
+            null,
+            json_encode(['code' => $this->totpCode()])
+        );
+        $this->assertSame(200, $verify->getStatusCode(), $verify->getBody());
+        $this->assertEquals(
+            $member->ID,
+            $this->session()->get(ChangePasswordHandler::MFA_VERIFIED_MEMBER_ID),
+            'the completed check is recorded for this member'
+        );
+
+        $this->postNewPassword();
+
+        $this->assertNotSame($passwordBefore, Member::get()->byID($member->ID)->Password, 'password must change');
+        $this->assertEquals($member->ID, $this->session()->get('loggedInAs'));
+    }
+
     public function testMemberWithoutMfaCanStillResetTheirPassword()
     {
         $member = $this->objFromFixture(Member::class, 'carol');
@@ -128,6 +181,29 @@ class ChangePasswordHandlerTest extends FunctionalTest
     {
         $this->session()->set(MFAChangePasswordHandler::MFA_VERIFIED_ON_CHANGE_PASSWORD, true);
         $this->session()->set(ChangePasswordHandler::MFA_VERIFIED_MEMBER_ID, $member->ID);
+    }
+
+    /**
+     * Store a known TOTP secret on the member's registration, encrypted as upstream stores it.
+     */
+    private function giveTotpSecret(Member $member): void
+    {
+        $method = $member->RegisteredMFAMethods()->first();
+        $secret = Injector::inst()->get(EncryptionAdapterInterface::class)->encrypt(self::TOTP_SECRET, self::MFA_KEY);
+        $method->Data = json_encode(['secret' => $secret]);
+        $method->write();
+    }
+
+    /**
+     * The code an authenticator app shows right now. Waits out the last second of a time step, so
+     * the code cannot expire between making and checking it.
+     */
+    private function totpCode(): string
+    {
+        if (time() % 30 >= 29) {
+            sleep(2);
+        }
+        return TOTP::create(self::TOTP_SECRET)->now();
     }
 
     private function postNewPassword(): HTTPResponse
