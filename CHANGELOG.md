@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- **A password reset now requires the MFA check** (CVE-2026-55186, `PKSA-xxk3-rjxm-jftv`). On CMS 5,
+  silverstripe/mfa asks for the second factor only when the change password form is shown: a POST
+  straight to the form changed the password and logged the member in without it. Upstream disclosed
+  this without a fix for CMS 5 (CMS 6 is not affected). The bundle replaces
+  `SilverStripe\MFA\Authenticator\ChangePasswordHandler` through the Injector with
+  `Restruct\MFABundle\Authenticator\ChangePasswordHandler`, which refuses the reset until the member
+  of the reset link has completed the MFA check, and sends them back to it. A completed check now
+  counts only for the member it was made for: upstream recorded it as a plain session flag, so a check
+  completed for one account also counted for another reset link opened later in the same session.
+  The class is applied on CMS 6 too, which upstream reports as not affected; there it refuses only
+  what upstream's own check refuses. A project that replaces the same class itself must extend the
+  bundle's class to keep the fix.
+
 ## 1.9.0 (2026-11-02)
 
 ### Fixed

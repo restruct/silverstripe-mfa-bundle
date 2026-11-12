@@ -34,6 +34,12 @@ a 500, and every wrong password counts twice towards the account lockout.
   period and algorithm are used to check the code, not only to build the QR code. Tokens registered
   on a dev or test site are labelled `(DEV)` or `(TEST)`. An empty site title, or one with a colon,
   no longer breaks registration ([section 2](#2-configure-totp-settings-optional)).
+- **Password reset cannot skip MFA** (CVE-2026-55186). On CMS 5, upstream asks for the second factor
+  only when the change password form is shown, so posting the form directly changed the password
+  and logged the member in without it; upstream disclosed this without a fix for CMS 5. The bundle
+  requires a completed MFA check, made for that same member, before a reset is accepted. Projects
+  that run `composer audit` can ignore `PKSA-xxk3-rjxm-jftv` with that reason once this release is
+  installed.
 - **A "Registered MFA Methods" list on each member**, so an administrator can delete a method and
   have that member register again.
 - **Help pages** at `/mfa-help/` in five languages, linked from the login screens.
