@@ -38,8 +38,10 @@ class WebAuthnRegistrationStartTest extends SapphireTest
         $this->assertIsArray($options);
         $this->assertNotEmpty($options['challenge'] ?? null, 'options carry a challenge');
 
-        # null attachment = no preference: the browser must not be sent a platform restriction
+        # null attachment = no preference: the browser must not be sent a platform restriction.
+        # Upstream (webauthn-lib 4) sends "" here (its (string) cast of null), the fork sends nothing;
+        # browsers ignore an unknown attachment value, so both mean "any authenticator".
         $attachment = $options['authenticatorSelection']['authenticatorAttachment'] ?? null;
-        $this->assertNull($attachment, 'no authenticatorAttachment restriction is sent');
+        $this->assertNotContains($attachment, ['platform', 'cross-platform'], 'no authenticatorAttachment restriction is sent');
     }
 }
