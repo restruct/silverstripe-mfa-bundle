@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.9.2 (2026-11-25)
+
+### Tests
+
+- `WebAuthnRegistrationStartTest`: starting a security-key registration under the bundle's config
+  (`authenticator_attachment: null`, both platform and cross-platform keys). `BundleConfigTest` only
+  pinned the config value. A webauthn-lib 5 port that turned that null into `''` made every
+  registration throw, while the authenticator's own suite stayed green.
+
+### Docs
+
+- README: how to use the webauthn-lib 5 fork of `silverstripe/webauthn-authenticator` for the
+  webauthn-lib advisories that upstream does not fix yet.
+
 ## 1.9.1 (2026-11-12)
 
 ### Security

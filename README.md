@@ -231,6 +231,30 @@ composer require restruct/silverstripe-mfa-bundle
 Then add `SS_MFA_SECRET_KEY` to `.env` ([section 1](#1-set-encryption-key-required)) and run
 `dev/build`. That's it. MFA is enforced with a 6-month grace period out of the box.
 
+### WebAuthn advisories: use the webauthn-lib 5 fork
+
+`silverstripe/webauthn-authenticator` (5.3.x for CMS 5, 6.0.x for CMS 6) requires
+`web-auth/webauthn-lib ^4.4`. Several advisories against webauthn-lib are fixed only in 5.3.13 and
+later, so `composer audit` reports them and Composer may refuse the install. Upstream has no
+webauthn-lib 5 release yet
+([silverstripe/silverstripe-webauthn-authenticator#228](https://github.com/silverstripe/silverstripe-webauthn-authenticator/issues/228)).
+[restruct/silverstripe-webauthn-authenticator](https://github.com/restruct/silverstripe-webauthn-authenticator)
+is a fork on webauthn-lib 5 with the package name unchanged. Its tags are `5.3.3-p1` for CMS 5 (PHP
+8.2 or newer) and `6.0.1-p1` for CMS 6. Keys registered before the switch keep working. The bundle
+needs no change for it: its `^5 || ^6` constraint accepts the fork's tags. Add the fork ahead of
+Packagist:
+
+```json
+"repositories": [
+    {"type": "vcs", "url": "https://github.com/restruct/silverstripe-webauthn-authenticator", "only": ["silverstripe/webauthn-authenticator"]}
+]
+```
+
+If the project has a Packagist entry with an `exclude` list, add `silverstripe/webauthn-authenticator`
+to it. Then run `composer update silverstripe/webauthn-authenticator web-auth/webauthn-lib -W` and
+check with `composer audit`. Remove the repository entry again once upstream releases webauthn-lib 5
+support.
+
 ## Configuration
 
 ### 1. Set encryption key (required)
